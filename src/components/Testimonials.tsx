@@ -4,21 +4,21 @@ import { motion } from "motion/react";
 const testimonials = [
   {
     quote:
-      "A complete rebuild in five days. The result outperformed everything we'd spent months building before.",
+      "I can match a whole shoot in minutes. The LUT previews are fast, and the results look expensive without being overcooked.",
     name: "Sarah Chen",
-    role: "CEO, Luminary",
+    role: "Portrait Photographer",
   },
   {
     quote:
-      "Conversions up 4x. That's not a typo. The design just works differently when it's built on real data.",
+      "The preset workflow is perfect for content. I tweak once, save it, and keep my feed consistent across weeks.",
     name: "Marcus Webb",
-    role: "Head of Growth, Arcline",
+    role: "Content Creator",
   },
   {
     quote:
-      "They didn't just design our site. They defined our brand. World-class doesn't begin to cover it.",
+      "Subtle control over intensity makes all the difference. It nails that cinematic warmth without crushing skin tones.",
     name: "Elena Voss",
-    role: "Brand Director, Helix",
+    role: "Colorist",
   },
 ];
 
@@ -30,11 +30,11 @@ export default function Testimonials() {
         <div className="flex flex-col items-center text-center mb-16 gap-4">
           <div className="liquid-glass rounded-full px-3.5 py-1">
             <span className="text-white text-xs font-medium font-body">
-              What They Say
+              Reviews
             </span>
           </div>
           <BlurText
-            text="Don't take our word for it."
+            text="Loved by creators and photographers."
             className="text-4xl md:text-5xl lg:text-6xl font-heading italic text-white tracking-tight leading-[0.9] justify-center"
             delay={100}
           />

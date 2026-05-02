@@ -190,9 +190,9 @@ export default function AdminApp() {
             </div>
             <div>
               <p className="text-white font-heading italic text-base leading-tight">
-                Studio
+                Mivibe
               </p>
-              <p className="text-white/30 text-xs font-body">LUT Admin</p>
+              <p className="text-white/30 text-xs font-body">Mivibe LUTs Admin</p>
             </div>
           </div>
         </div>

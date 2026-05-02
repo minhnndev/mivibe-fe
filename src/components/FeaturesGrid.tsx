@@ -5,23 +5,23 @@ import { motion } from "motion/react";
 const features = [
   {
     icon: Zap,
-    title: "Days, Not Months",
-    body: "Concept to launch at a pace that redefines fast. Because waiting isn't a strategy.",
+    title: "Real-Time Preview",
+    body: "See your filter stack update instantly—no renders, no delays. Compare looks side-by-side and commit when it feels right.",
   },
   {
     icon: Palette,
-    title: "Obsessively Crafted",
-    body: "Every detail considered. Every element refined. Design so precise, it feels inevitable.",
+    title: "Curated LUT Library",
+    body: "From clean and modern to bold and cinematic. Start with a preset, then shape it into your own style.",
   },
   {
     icon: BarChart3,
-    title: "Built to Convert",
-    body: "Layouts informed by data. Decisions backed by performance. Results you can measure.",
+    title: "Consistent Results",
+    body: "Save presets, apply them across a set, and keep your feed or client deliverables perfectly cohesive.",
   },
   {
     icon: Shield,
-    title: "Secure by Default",
-    body: "Enterprise-grade protection comes standard. SSL, DDoS mitigation, compliance. All included.",
+    title: "Export-Ready",
+    body: "Deliver high-quality results with the look intact—ready for social, web, or your next campaign.",
   },
 ];
 
@@ -33,11 +33,11 @@ export default function FeaturesGrid() {
         <div className="flex flex-col items-center text-center mb-16 gap-4">
           <div className="liquid-glass rounded-full px-3.5 py-1">
             <span className="text-white text-xs font-medium font-body">
-              Why Us
+              Why It Works
             </span>
           </div>
           <BlurText
-            text="The difference is everything."
+            text="Make your photos feel intentional."
             className="text-4xl md:text-5xl lg:text-6xl font-heading italic text-white tracking-tight leading-[0.9] justify-center"
             delay={100}
           />

@@ -1,50 +1,57 @@
-import { ArrowUpRight } from "lucide-react";
+type NavbarItem = {
+  id: string;
+  label: string;
+};
 
-export default function Navbar() {
+type NavbarProps = {
+  items: NavbarItem[];
+  activeId: string;
+  onSelect: (id: string) => void;
+};
+
+export default function Navbar({ items, activeId, onSelect }: NavbarProps) {
   return (
-    <nav className="fixed top-4 left-0 right-0 z-50 px-8 lg:px-16 py-3 flex items-center justify-between">
-      {/* Logo */}
-      <div className="flex items-center gap-2">
-        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center">
-          <span className="text-black font-heading italic text-sm font-bold">
-            S
-          </span>
+    <>
+      {/* Logo (top-left) */}
+      <div className="absolute left-6 top-6 z-50 hidden md:flex">
+        <div className="px-5 py-4 flex items-center gap-4">
+          <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shrink-0">
+            <span className="text-black font-heading italic text-base font-bold">
+              M
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <h2 className="font-heading italic text-white text-base">
+              Mivibe
+            </h2>
+            <span className="text-white/40 text-xs font-body">
+              Filters & LUTs
+            </span>
+          </div>
         </div>
-        <span className="font-heading italic text-white text-lg hidden sm:block">
-          Studio
-        </span>
       </div>
 
-      {/* Center Nav */}
-      <div className="hidden md:flex items-center liquid-glass rounded-full px-1.5 py-1 gap-1">
-        {["Home", "Services", "Work", "Process", "Pricing"]
-          .slice(0, 4)
-          .map((link) => (
-            <a
-              key={link}
-              href="#"
-              className="px-3 py-2 text-sm font-medium text-white/90 font-body hover:text-white transition-colors"
-            >
-              {link}
-            </a>
-          ))}
-        <a
-          href="#"
-          className="flex items-center gap-1 bg-white text-black rounded-full px-3.5 py-1.5 text-sm font-body font-medium hover:bg-white/90 transition-colors"
-        >
-          Get Started
-          <ArrowUpRight size={14} />
-        </a>
-      </div>
-
-      {/* Mobile CTA */}
-      <a
-        href="#"
-        className="md:hidden flex items-center gap-1 liquid-glass-strong rounded-full px-4 py-2 text-sm font-body text-white"
+      {/* Section selector (left side) */}
+      <aside
+        className="absolute left-6 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col"
+        aria-label="Sections"
       >
-        Get Started
-        <ArrowUpRight size={14} />
-      </a>
-    </nav>
+        <div className="p-2 flex flex-col gap-2">
+          {items.map((item) => {
+            const isActive = item.id === activeId;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onSelect(item.id)}
+                className={`${isActive ? "liquid-glass-strong" : "liquid-glass"} rounded-full px-4 py-2 text-left text-sm font-body text-white/90 hover:text-white transition-colors`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+    </>
   );
 }

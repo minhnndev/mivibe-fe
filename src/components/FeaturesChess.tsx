@@ -27,16 +27,16 @@ function GifPlaceholder({ label }: GifPlaceholderProps) {
 
 const rows = [
   {
-    title: "Designed to convert. Built to perform.",
-    body: "Every pixel is intentional. Our AI studies what works across thousands of top sites—then builds yours to outperform them all.",
-    cta: "Learn more",
+    title: "Instant LUT previews. No waiting.",
+    body: "Try cinematic looks in real time, compare variations, and keep edits non-destructive so you can always roll back.",
+    cta: "Browse looks",
     gif: "feature-1",
     reverse: false,
   },
   {
-    title: "It gets smarter. Automatically.",
-    body: "Your site evolves on its own. AI monitors every click, scroll, and conversion—then optimizes in real time. No manual updates. Ever.",
-    cta: "See how it works",
+    title: "Fine-tune your signature style.",
+    body: "Adjust intensity, lift shadows, cool highlights, or warm skin tones—then save presets you can reuse across projects.",
+    cta: "Create a preset",
     gif: "feature-2",
     reverse: true,
   },
@@ -44,7 +44,7 @@ const rows = [
 
 export default function FeaturesChess() {
   return (
-    <section className="py-32 px-6 md:px-16">
+    <section className="py-12 px-6 md:px-16">
       {/* Section header */}
       <div className="flex flex-col items-center text-center mb-20 gap-4">
         <div className="liquid-glass rounded-full px-3.5 py-1">
@@ -53,7 +53,7 @@ export default function FeaturesChess() {
           </span>
         </div>
         <BlurText
-          text="Pro features. Zero complexity."
+          text="Pro looks, without the complexity."
           className="text-4xl md:text-5xl lg:text-6xl font-heading italic text-white tracking-tight leading-[0.9] justify-center"
           delay={100}
         />

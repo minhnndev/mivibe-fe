@@ -5,40 +5,31 @@ const VIDEO_SRC =
   "https://stream.mux.com/NcU3HlHeF7CUL86azTTzpy3Tlb00d6iF3BmCdFslMJYM.m3u8";
 
 const stats = [
-  { value: "200+", label: "Sites launched" },
-  { value: "98%", label: "Client satisfaction" },
-  { value: "3.2x", label: "More conversions" },
-  { value: "5 days", label: "Average delivery" },
+  { value: "150+", label: "LUTs & presets" },
+  { value: "1-tap", label: "Filter application" },
+  { value: "Free", label: "Edits" },
+  { value: "Export", label: "Results" },
 ];
 
-export default function Stats() {
-  return (
-    <section className="relative overflow-hidden py-32">
-      <HLSVideo
-        src={VIDEO_SRC}
-        className="absolute inset-0 w-full h-full object-cover"
-        desaturate
-      />
+type StatsProps = {
+  asSlide?: boolean;
+};
 
-      {/* Top fade */}
-      <div
-        className="absolute top-0 left-0 right-0 pointer-events-none z-[1]"
-        style={{
-          height: "200px",
-          background: "linear-gradient(to bottom, black, transparent)",
-        }}
-      />
-      {/* Bottom fade */}
-      <div
-        className="absolute bottom-0 left-0 right-0 pointer-events-none z-[1]"
-        style={{
-          height: "200px",
-          background: "linear-gradient(to top, black, transparent)",
-        }}
-      />
+export default function Stats({ asSlide = false }: StatsProps) {
+  return (
+    <section
+      className={`relative overflow-hidden ${asSlide ? "h-full" : "py-32"}`}
+    >
+      {!asSlide ? (
+        <HLSVideo
+          src={VIDEO_SRC}
+          className="absolute inset-0 w-full h-full object-cover"
+          desaturate
+        />
+      ) : null}
 
       {/* Content */}
-      <div className="relative z-10 flex items-center justify-center px-6 md:px-16">
+      <div className="relative z-10 flex items-center justify-center px-6 md:px-16 h-full">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
