@@ -10,7 +10,9 @@ export type Category = {
 export type Lut = {
   id: string;
   name: string;
+  slug?: string | null;
   filename: string;
+  storage_key?: string | null;
   category_id?: string | null;
   description?: string | null;
   is_active: boolean;
@@ -32,7 +34,7 @@ export type CategoryInput = Partial<Omit<Category, "id">> & {
 export type LutInput = Partial<Omit<Lut, "id">> & {
   id?: string;
   name: string;
-  filename: string;
+  filename?: string;
 };
 
 export type Manifest = {
@@ -47,7 +49,9 @@ export type Manifest = {
   luts: Array<{
     id: string;
     name: string;
+    slug?: string | null;
     filename: string;
+    storage_key?: string | null;
     category_id?: string | null;
     is_free: boolean;
     sort_order: number;

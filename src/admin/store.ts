@@ -4,6 +4,21 @@
 import { supabase, isConfigured } from "./supabase";
 import type { Category, CategoryInput, Lut, LutInput, Manifest } from "./types";
 
+export const LUTS_BASE_URL =
+  import.meta.env.VITE_LUTS_BASE_URL || "https://cdn.mivibe.app/luts";
+
+function slugify(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export function getLutUrl(storageKey: string): string {
+  return `${LUTS_BASE_URL.replace(/\/$/, "")}/${storageKey.replace(/^\//, "")}`;
+}
+
 // ─── Mock seed data ────────────────────────────────────────────────────────────
 const SEED_CATEGORIES: Category[] = [
   {
@@ -40,7 +55,9 @@ const SEED_LUTS: Lut[] = [
   {
     id: "lut-1",
     name: "Cinematic Warm",
+    slug: "cinematic-warm",
     filename: "cinematic_warm.cube",
+    storage_key: "cinematic_warm.cube",
     category_id: "cat-1",
     is_active: true,
     is_free: true,
@@ -52,7 +69,9 @@ const SEED_LUTS: Lut[] = [
   {
     id: "lut-2",
     name: "Cool Blue",
+    slug: "cool-blue",
     filename: "cool_blue.cube",
+    storage_key: "cool_blue.cube",
     category_id: "cat-1",
     is_active: true,
     is_free: false,
@@ -64,7 +83,9 @@ const SEED_LUTS: Lut[] = [
   {
     id: "lut-3",
     name: "Vintage Fade",
+    slug: "vintage-fade",
     filename: "vintage_fade.cube",
+    storage_key: "vintage_fade.cube",
     category_id: "cat-2",
     is_active: true,
     is_free: false,
@@ -76,7 +97,9 @@ const SEED_LUTS: Lut[] = [
   {
     id: "lut-4",
     name: "Teal & Orange",
+    slug: "teal-orange",
     filename: "teal_orange.cube",
+    storage_key: "teal_orange.cube",
     category_id: "cat-1",
     is_active: true,
     is_free: false,
@@ -88,7 +111,9 @@ const SEED_LUTS: Lut[] = [
   {
     id: "lut-5",
     name: "B&W High Contrast",
+    slug: "bw-high-contrast",
     filename: "bw_contrast.cube",
+    storage_key: "bw_contrast.cube",
     category_id: "cat-1",
     is_active: true,
     is_free: true,
@@ -100,7 +125,9 @@ const SEED_LUTS: Lut[] = [
   {
     id: "lut-6",
     name: "Sunset Glow",
+    slug: "sunset-glow",
     filename: "sunset_glow.cube",
+    storage_key: "sunset_glow.cube",
     category_id: "cat-4",
     is_active: true,
     is_free: false,
@@ -112,7 +139,9 @@ const SEED_LUTS: Lut[] = [
   {
     id: "lut-7",
     name: "Matte Green",
+    slug: "matte-green",
     filename: "matte_green.cube",
+    storage_key: "matte_green.cube",
     category_id: "cat-4",
     is_active: false,
     is_free: false,
@@ -124,7 +153,9 @@ const SEED_LUTS: Lut[] = [
   {
     id: "lut-8",
     name: "Nordic Pale",
+    slug: "nordic-pale",
     filename: "nordic_pale.cube",
+    storage_key: "nordic_pale.cube",
     category_id: "cat-2",
     is_active: true,
     is_free: true,
@@ -223,6 +254,7 @@ export async function getLuts(): Promise<Lut[]> {
     const { data, error } = await supabase
       .from("luts")
       .select("*, categories(*)")
+      .eq("is_active", true)
       .order("sort_order");
     if (!error && data) return data as Lut[];
   }
@@ -233,10 +265,14 @@ export async function saveLut(lut: LutInput): Promise<Lut[]> {
   const luts = await getLuts();
   const existing = luts.findIndex((l) => l.id === lut.id);
   const existingItem = existing >= 0 ? luts[existing] : undefined;
+  const filename = lut.filename || lut.storage_key || "";
+  const storage_key = lut.storage_key || lut.filename || "";
   const item: Lut = {
     id: lut.id ?? `lut-${Date.now()}`,
     name: lut.name,
-    filename: lut.filename,
+    slug: lut.slug ?? existingItem?.slug ?? slugify(lut.name),
+    filename,
+    storage_key,
     category_id: lut.category_id ?? null,
     description: lut.description ?? null,
     is_active: lut.is_active ?? true,
@@ -245,7 +281,7 @@ export async function saveLut(lut: LutInput): Promise<Lut[]> {
     intensity: lut.intensity ?? 1.0,
     tags: lut.tags ?? [],
     preview_url: lut.preview_url ?? null,
-    download_url: lut.download_url ?? null,
+    download_url: getLutUrl(storage_key),
     created_at:
       lut.created_at ?? existingItem?.created_at ?? new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -258,7 +294,21 @@ export async function saveLut(lut: LutInput): Promise<Lut[]> {
   saveLocal("luts", updated);
 
   if (isConfigured) {
-    const { error } = await supabase.from("luts").upsert(item);
+    const payload = {
+      name: item.name,
+      slug: item.slug,
+      filename: item.filename,
+      storage_key: item.storage_key,
+      category_id: item.category_id,
+      is_active: item.is_active,
+      is_free: item.is_free,
+      intensity: item.intensity,
+      tags: item.tags,
+    };
+    const { error } =
+      existing >= 0
+        ? await supabase.from("luts").update(payload).eq("id", item.id)
+        : await supabase.from("luts").insert({ id: item.id, ...payload });
     if (error) console.warn("Supabase sync failed:", error);
   }
   return updated;
@@ -289,19 +339,21 @@ export async function generateManifest(): Promise<Manifest> {
       .map((l) => ({
         id: l.id,
         name: l.name,
+        slug: l.slug ?? null,
         filename: l.filename,
+        storage_key: l.storage_key ?? l.filename,
         category_id: l.category_id ?? null,
         is_free: l.is_free,
         sort_order: l.sort_order,
         intensity: l.intensity,
         tags: l.tags ?? [],
         preview_url: l.preview_url ?? null,
-        download_url: l.download_url ?? `/luts-cube/${l.filename}`,
+        download_url: l.download_url ?? getLutUrl(l.storage_key ?? l.filename),
       })),
   };
 }
 
-// ─── Available .cube files (from public/luts-cube) ────────────────────────────
+// ─── Available .cube files (from R2 bucket) ───────────────────────────────────
 export const KNOWN_CUBE_FILES = [
   "cinematic_warm.cube",
   "cool_blue.cube",

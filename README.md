@@ -66,15 +66,14 @@ CREATE POLICY "admin_all_luts" ON luts FOR ALL USING (true);
 
 ```
 studio-landing/
-├── public/
-│   └── luts-cube/          <- File .cube LUTs (them LUT moi vao day)
+├── public/                 <- Static landing assets
 ├── src/
 │   ├── components/         <- Landing page sections
 │   └── admin/              <- LUT Admin dashboard
-│       ├── AdminApp.jsx
-│       ├── store.js         <- Data layer (localStorage + Supabase)
-│       ├── supabase.js      <- Supabase client
-│       ├── lutEngine.js     <- .cube parser + Canvas preview renderer
+│       ├── AdminApp.tsx
+│       ├── store.ts         <- Data layer (localStorage + Supabase + R2 LUT URLs)
+│       ├── supabase.ts      <- Supabase client
+│       ├── lutEngine.ts     <- .cube parser + Canvas preview renderer
 │       └── components/
 ├── .env.example
 └── README.md
@@ -98,6 +97,6 @@ GET https://your-project.supabase.co/rest/v1/luts
 
 ## Them LUT moi
 
-1. Copy .cube vao `public/luts-cube/`
-2. Them filename vao `KNOWN_CUBE_FILES` trong `src/admin/store.js`
+1. Upload .cube len R2 bucket `mivibe-luts`
+2. Them filename vao `KNOWN_CUBE_FILES` trong `src/admin/store.ts`
 3. Vao /admin -> Add LUT

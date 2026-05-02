@@ -98,13 +98,17 @@ export default function AdminApp() {
     if (
       search &&
       !lut.name.toLowerCase().includes(search.toLowerCase()) &&
-      !lut.filename.toLowerCase().includes(search.toLowerCase())
+      !lut.filename.toLowerCase().includes(search.toLowerCase()) &&
+      !(lut.slug ?? "").toLowerCase().includes(search.toLowerCase())
     )
       return false;
     return true;
   });
 
   const handleSaveLut = async (lut: LutInput) => {
+    setLuts((items) =>
+      items.map((item) => (item.id === lut.id ? { ...item, ...lut } : item)),
+    );
     const updated = await saveLut(lut);
     setLuts(updated);
     setEditModal(null);
@@ -390,8 +394,11 @@ export default function AdminApp() {
                       <div key={lut.id} className="relative group">
                         <LutPreviewCard
                           lut={lut}
+                          categories={categories}
                           previewImage={previewImage}
                           selected={selectedLut?.id === lut.id}
+                          editable
+                          onSave={handleSaveLut}
                           onClick={() => setSelectedLut(lut)}
                         />
                         {/* Action overlay */}
@@ -648,7 +655,7 @@ export default function AdminApp() {
             {/* Export manifest */}
             <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4">
               <h3 className="text-white font-body font-medium">
-                📦 Mobile Manifest JSON
+                Mobile Manifest JSON
               </h3>
               <p className="text-white/40 text-xs leading-relaxed">
                 Export a{" "}
@@ -677,7 +684,7 @@ export default function AdminApp() {
             {/* Supabase REST API */}
             <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4">
               <h3 className="text-white font-body font-medium">
-                🔌 Supabase REST API
+                Supabase REST API
               </h3>
               <p className="text-white/40 text-xs leading-relaxed">
                 When Supabase is configured, mobile apps can fetch LUTs directly

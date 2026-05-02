@@ -12,7 +12,9 @@ type LutEditModalProps = {
 
 type LutFormState = {
   name: string;
+  slug: string;
   filename: string;
+  storage_key: string;
   category_id: string | null;
   description: string;
   is_active: boolean;
@@ -37,7 +39,9 @@ export default function LutEditModal({
   const [form, setForm] = useState<LutFormState>(() => {
     const initial: LutFormState = {
       name: "",
+      slug: "",
       filename: KNOWN_CUBE_FILES[0] ?? "",
+      storage_key: KNOWN_CUBE_FILES[0] ?? "",
       category_id: null,
       description: "",
       is_active: true,
@@ -50,7 +54,10 @@ export default function LutEditModal({
     if (lut) {
       if (lut.id) initial.id = lut.id;
       if (typeof lut.name === "string") initial.name = lut.name;
+      if (typeof lut.slug === "string") initial.slug = lut.slug;
       if (typeof lut.filename === "string") initial.filename = lut.filename;
+      initial.storage_key =
+        lut.storage_key ?? lut.filename ?? initial.storage_key;
       initial.category_id = (lut.category_id ?? null) as string | null;
       initial.description = (lut.description ?? "") as string;
       initial.is_active = lut.is_active ?? true;
@@ -139,7 +146,10 @@ export default function LutEditModal({
             <select
               required
               value={form.filename}
-              onChange={(e) => set("filename", e.target.value)}
+              onChange={(e) => {
+                set("filename", e.target.value);
+                set("storage_key", e.target.value);
+              }}
               className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-body focus:outline-none focus:border-white/30"
             >
               {KNOWN_CUBE_FILES.map((f) => (
