@@ -4,9 +4,9 @@ import type { Lut } from "../types";
 
 // Default preview images (royalty-free Unsplash photos)
 const DEFAULT_PREVIEW_IMAGES = [
-  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80", // landscape
-  "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80", // portrait
-  "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=600&q=80", // urban
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4", // landscape
+  "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04", // portrait
+  "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429", // urban
 ];
 
 type LutPreviewCardProps = {

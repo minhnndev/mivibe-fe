@@ -196,7 +196,9 @@ export default function AdminApp() {
               <p className="text-white font-heading italic text-base leading-tight">
                 Mivibe
               </p>
-              <p className="text-white/30 text-xs font-body">Mivibe LUTs Admin</p>
+              <p className="text-white/30 text-xs font-body">
+                Mivibe LUTs Admin
+              </p>
             </div>
           </div>
         </div>
@@ -620,7 +622,7 @@ export default function AdminApp() {
                   : "border-orange-500/20 bg-orange-900/10"
               }`}
             >
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3">
                 {isConfigured ? (
                   <CheckCircle size={18} className="text-emerald-400" />
                 ) : (
@@ -666,7 +668,7 @@ export default function AdminApp() {
               <div className="bg-black/40 rounded-xl p-4 text-xs font-mono text-white/50 space-y-1">
                 <div>
                   <span className="text-blue-400">GET</span>{" "}
-                  <span className="text-white/30">https://yourcdn.com/</span>
+                  <span className="text-white/30">https://cdn.mivibe.app/</span>
                   <span className="text-emerald-400">luts-manifest.json</span>
                 </div>
                 <div className="mt-2 text-white/20">
