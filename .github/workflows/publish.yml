@@ -3,7 +3,7 @@ name: Mivibe Frontend CI/CD
 on:
   push:
     branches:
-      - master
+      - main
 
 env:
   APP_NAME: mivibe-frontend # Mivibe Landing Page + Web Admin
