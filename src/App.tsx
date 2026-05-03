@@ -39,8 +39,8 @@ export default function App() {
         node: <Testimonials />,
       },
       {
-        id: "get-app",
-        label: "Get App",
+        id: "install",
+        label: "Install",
         node: <CtaFooter asSlide />,
       },
     ],

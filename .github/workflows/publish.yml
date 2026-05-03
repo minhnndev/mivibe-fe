@@ -1,0 +1,78 @@
+name: Mivibe Frontend CI/CD
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  APP_NAME: mivibe-frontend # Mivibe Landing Page + Web Admin
+  ENVIRONMENT: Dev
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+
+      # 🔐 Login to GHCR
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 🧱 Versioning
+      - name: Set version
+        run: echo "VERSION=v0.0.${{ github.run_number }}" >> $GITHUB_ENV
+
+      # 🏗️ Build image
+      - name: Build image
+        run: |
+          IMAGE=ghcr.io/${{ github.repository }}
+          docker build -t $IMAGE:${{ env.VERSION }} .
+
+      # 🚀 Push image
+      - name: Push image
+        run: |
+          IMAGE=ghcr.io/${{ github.repository }}
+          docker push $IMAGE:${{ env.VERSION }}
+
+      # 📥 Checkout infra repo
+      - name: Checkout infrastructure repo
+        uses: actions/checkout@v4
+        with:
+          repository: meetdy/infrastructure
+          ref: main
+          token: ${{ secrets.INFRA_REPO_PAT }}
+          path: infra
+
+      # ✏️ Update deployment.yaml
+      - name: Update image tag
+        run: |
+          sed -i \
+            's|image: *"ghcr.io/minhnndev/mivibe-fe:[^"]*"|image: "ghcr.io/minhnndev/mivibe-fe:'"$VERSION"'"|' \
+            infra/manifests/mivibe-fe/deployment.yaml
+
+      # 📤 Commit & push
+      - name: Commit and push (if changed)
+        run: |
+          cd infra
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+          if git diff --quiet manifests/mivibe-fe/deployment.yaml; then
+            echo "No image change detected. Skipping commit."
+            exit 0
+          fi
+
+          git add manifests/mivibe-fe/deployment.yaml
+          git commit -m "chore(frontend): deploy $VERSION"
+          git push
