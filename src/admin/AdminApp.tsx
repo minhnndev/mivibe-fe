@@ -22,13 +22,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -370,62 +363,38 @@ export default function AdminApp() {
                 </div>
 
                 {/* Category filter */}
-                <Select
+                <select
                   value={filterCategory}
-                  onValueChange={setFilterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className={
+                    isLight
+                      ? "h-8 w-40 rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-700 outline-none focus:border-neutral-300"
+                      : "h-8 w-40 rounded-lg border border-white/10 bg-[#111] px-3 text-sm text-white/70 outline-none focus:border-white/20"
+                  }
                 >
-                  <SelectTrigger
-                    className={
-                      isLight
-                        ? "w-40 rounded-lg border-neutral-200 bg-white text-neutral-700 focus-visible:ring-neutral-200"
-                        : "w-40 rounded-lg border-white/10 bg-white/5 text-white/70 focus-visible:ring-white/10"
-                    }
-                  >
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent
-                    className={
-                      isLight
-                        ? "rounded-lg border-neutral-200 bg-white text-neutral-950 shadow-lg"
-                        : "rounded-lg border-white/10 bg-[#111] text-white"
-                    }
-                  >
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <option value="all">All Categories</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
 
                 {/* Status filter */}
-                <Select
+                <select
                   value={filterStatus}
-                  onValueChange={(value) => setFilterStatus(value as FilterStatus)}
+                  onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
+                  className={
+                    isLight
+                      ? "h-8 w-36 rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-700 outline-none focus:border-neutral-300"
+                      : "h-8 w-36 rounded-lg border border-white/10 bg-[#111] px-3 text-sm text-white/70 outline-none focus:border-white/20"
+                  }
                 >
-                  <SelectTrigger
-                    className={
-                      isLight
-                        ? "w-36 rounded-lg border-neutral-200 bg-white text-neutral-700 focus-visible:ring-neutral-200"
-                        : "w-36 rounded-lg border-white/10 bg-white/5 text-white/70 focus-visible:ring-white/10"
-                    }
-                  >
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent
-                    className={
-                      isLight
-                        ? "rounded-lg border-neutral-200 bg-white text-neutral-950 shadow-lg"
-                        : "rounded-lg border-white/10 bg-[#111] text-white"
-                    }
-                  >
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="free">Free</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="free">Free</option>
+                </select>
 
                 <ToggleGroup
                   type="single"
@@ -1025,6 +994,7 @@ export default function AdminApp() {
         <LutEditModal
           lut={editModal}
           categories={categories}
+          luts={luts}
           onSave={handleSaveLut}
           onClose={() => setEditModal(null)}
           theme={theme}

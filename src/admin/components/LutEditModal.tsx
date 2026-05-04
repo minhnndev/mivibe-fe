@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,13 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +17,7 @@ import type { Category, Lut, LutInput } from "../types";
 type LutEditModalProps = {
   lut: Partial<Lut> | null;
   categories: Category[];
+  luts?: Lut[];
   onSave: (lut: LutInput) => void;
   onClose: () => void;
   theme?: "dark" | "light";
@@ -51,18 +45,57 @@ type LutFormState = {
 export default function LutEditModal({
   lut,
   categories,
+  luts = [],
   onSave,
   onClose,
   theme = "dark",
 }: LutEditModalProps) {
   const isNew = !lut?.id;
   const isLight = theme === "light";
+  const lutFileOptions = useMemo(() => {
+    const options = new Map<
+      string,
+      { filename: string; storageKey: string; label: string }
+    >();
+
+    for (const item of luts) {
+      const filename = item.filename || item.storage_key || "";
+      const storageKey = item.storage_key || item.filename || "";
+      if (!filename || !storageKey) continue;
+      options.set(storageKey, {
+        filename,
+        storageKey,
+        label: item.name ? `${item.name} — ${filename}` : filename,
+      });
+    }
+
+    const currentFilename = lut?.filename || lut?.storage_key || "";
+    const currentStorageKey = lut?.storage_key || lut?.filename || "";
+    if (currentFilename && currentStorageKey && !options.has(currentStorageKey)) {
+      options.set(currentStorageKey, {
+        filename: currentFilename,
+        storageKey: currentStorageKey,
+        label: currentFilename,
+      });
+    }
+
+    if (options.size === 0) {
+      for (const file of KNOWN_CUBE_FILES) {
+        options.set(file, { filename: file, storageKey: file, label: file });
+      }
+    }
+
+    return Array.from(options.values()).sort((a, b) =>
+      a.label.localeCompare(b.label),
+    );
+  }, [lut?.filename, lut?.storage_key, luts]);
   const [form, setForm] = useState<LutFormState>(() => {
+    const defaultFile = lutFileOptions[0];
     const initial: LutFormState = {
       name: "",
       slug: "",
-      filename: KNOWN_CUBE_FILES[0] ?? "",
-      storage_key: KNOWN_CUBE_FILES[0] ?? "",
+      filename: defaultFile?.filename ?? "",
+      storage_key: defaultFile?.storageKey ?? "",
       category_id: null,
       description: "",
       is_active: true,
@@ -127,9 +160,9 @@ export default function LutEditModal({
   const inputClassName = isLight
     ? "border-neutral-200 bg-white text-neutral-950 placeholder:text-neutral-400 focus-visible:border-neutral-300 focus-visible:ring-neutral-200"
     : "border-white/10 bg-white/5 text-white placeholder:text-white/20 focus-visible:border-white/30 focus-visible:ring-white/10";
-  const selectContentClassName = isLight
-    ? "border-neutral-200 bg-white text-neutral-950 shadow-lg"
-    : "border-white/10 bg-[#111] text-white";
+  const selectClassName = isLight
+    ? "h-8 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-950 outline-none focus:border-neutral-300"
+    : "h-8 w-full rounded-lg border border-white/10 bg-[#111] px-3 text-sm text-white outline-none focus:border-white/20";
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -179,24 +212,24 @@ export default function LutEditModal({
             <label className={labelClassName}>
               LUT File *
             </label>
-            <Select
-              value={form.filename}
-              onValueChange={(value) => {
-                set("filename", value);
-                set("storage_key", value);
+            <select
+              required
+              value={form.storage_key || form.filename}
+              onChange={(e) => {
+                const selected = lutFileOptions.find(
+                  (option) => option.storageKey === e.target.value,
+                );
+                set("filename", selected?.filename ?? e.target.value);
+                set("storage_key", selected?.storageKey ?? e.target.value);
               }}
+              className={selectClassName}
             >
-              <SelectTrigger className={`w-full rounded-lg ${inputClassName}`}>
-                <SelectValue placeholder="Select LUT file" />
-              </SelectTrigger>
-              <SelectContent className={selectContentClassName}>
-                {KNOWN_CUBE_FILES.map((f) => (
-                  <SelectItem key={f} value={f}>
-                    {f}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {lutFileOptions.map((option) => (
+                <option key={option.storageKey} value={option.storageKey}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Category */}
@@ -204,24 +237,18 @@ export default function LutEditModal({
             <label className={labelClassName}>
               Category
             </label>
-            <Select
-              value={form.category_id ?? "none"}
-              onValueChange={(value) =>
-                set("category_id", value === "none" ? null : value)
-              }
+            <select
+              value={form.category_id ?? ""}
+              onChange={(e) => set("category_id", e.target.value || null)}
+              className={selectClassName}
             >
-              <SelectTrigger className={`w-full rounded-lg ${inputClassName}`}>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent className={selectContentClassName}>
-                <SelectItem value="none">No Category</SelectItem>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="">No Category</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Description */}
