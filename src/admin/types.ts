@@ -61,3 +61,21 @@ export type Manifest = {
     download_url: string;
   }>;
 };
+
+export type ViewMode = "grid" | "list";
+
+export type ActiveTab = "luts" | "categories" | "export";
+
+export type FilterStatus = "all" | "active" | "inactive" | "free";
+
+export type AdminTheme = "dark" | "light";
+
+export type Toast = { msg: string; type: "success" | "error" };
+
+export type PreviewImage = { label: string; url: string };
+
+export type ApiEndpoint = {
+  method: "GET";
+  path: string;
+  desc: string;
+};

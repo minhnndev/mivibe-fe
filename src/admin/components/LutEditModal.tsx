@@ -275,9 +275,9 @@ export default function LutEditModal({
                 </span>
               </label>
               <Slider
-                min="0"
-                max="1"
-                step="0.05"
+                min={0}
+                max={1}
+                step={0.05}
                 value={[Number(form.intensity)]}
                 onValueChange={([value]) => set("intensity", value ?? 1)}
                 className="py-3"

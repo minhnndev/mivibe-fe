@@ -30,6 +30,8 @@ type WebGlRenderer = {
 
 const lutCache = new Map<string, Promise<CubeLut>>();
 const imageCache = new Map<string, Promise<ScaledImage>>();
+const previewCache = new Map<string, Promise<string>>();
+const LUT_CACHE_NAME = "mivibe-luts-v1";
 let renderer: WebGlRenderer | null | false = null;
 
 function runIdle<T>(work: () => T): Promise<T> {
@@ -45,7 +47,7 @@ function runIdle<T>(work: () => T): Promise<T> {
     if ("requestIdleCallback" in window) {
       window.requestIdleCallback(run, { timeout: 500 });
     } else {
-      window.setTimeout(run, 0);
+      setTimeout(run, 0);
     }
   });
 }
@@ -356,6 +358,47 @@ function isValidCube(text: string) {
   return text.includes("LUT_3D_SIZE") || text.includes("TITLE");
 }
 
+function isHtmlResponse(text: string) {
+  const sample = text.trimStart().slice(0, 128).toLowerCase();
+  return sample.startsWith("<!doctype html") || sample.startsWith("<html");
+}
+
+function getBrowserCache(): Promise<Cache | null> {
+  if (!("caches" in window)) return Promise.resolve(null);
+  return window.caches.open(LUT_CACHE_NAME).catch(() => null);
+}
+
+async function readCachedLutText(url: string): Promise<string | null> {
+  const cache = await getBrowserCache();
+  if (!cache) return null;
+
+  const response = await cache.match(url);
+  if (!response) return null;
+
+  const text = await response.text();
+  if (isHtmlResponse(text) || !isValidCube(text)) {
+    await cache.delete(url);
+    return null;
+  }
+
+  return text;
+}
+
+async function writeCachedLutText(url: string, text: string): Promise<void> {
+  const cache = await getBrowserCache();
+  if (!cache) return;
+
+  await cache.put(
+    url,
+    new Response(text, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Mivibe-Cache": "lut-v1",
+      },
+    }),
+  );
+}
+
 function resolveLutUrl(input: string) {
   // nếu đã là absolute URL thì giữ nguyên
   if (input.startsWith("http")) return input;
@@ -369,8 +412,11 @@ export async function loadLutFromUrl(input: string): Promise<CubeLut> {
   const cached = lutCache.get(url);
   if (cached) return cached;
 
-  const promise = fetch(url)
-    .then(async (res) => {
+  const promise = readCachedLutText(url)
+    .then(async (cachedText) => {
+      if (cachedText) return cachedText;
+
+      const res = await fetch(url, { cache: "force-cache" });
       if (!res.ok) {
         throw new Error(`Failed to load LUT (${res.status}): ${url}`);
       }
@@ -378,7 +424,7 @@ export async function loadLutFromUrl(input: string): Promise<CubeLut> {
       const buffer = await res.arrayBuffer();
       const text = new TextDecoder("utf-8").decode(buffer);
 
-      if (text.startsWith("<!doctype html") || text.includes("<html")) {
+      if (isHtmlResponse(text)) {
         throw new Error(`Got HTML instead of LUT: ${url}`);
       }
 
@@ -386,6 +432,7 @@ export async function loadLutFromUrl(input: string): Promise<CubeLut> {
         throw new Error(`Invalid LUT format: ${url}`);
       }
 
+      await writeCachedLutText(url, text);
       return text;
     })
     .then((text) => runIdle(() => parseCube(text)))
@@ -437,12 +484,16 @@ export async function renderLutPreview(
   intensity = 1.0,
   maxSize = 400,
 ): Promise<string> {
+  const cacheKey = `${imageUrl}|${resolveLutUrl(lutUrl)}|${intensity}|${maxSize}`;
+  const cached = previewCache.get(cacheKey);
+  if (cached) return cached;
+
   const [source, lut] = await Promise.all([
     loadScaledImage(imageUrl, maxSize),
     loadLutFromUrl(lutUrl),
   ]);
 
-  return runIdle(() => {
+  const promise = runIdle(() => {
     const gpuPreview = renderWithWebGl(source, lut, intensity);
     if (gpuPreview) return gpuPreview;
 
@@ -459,5 +510,11 @@ export async function renderLutPreview(
     if (!ctx) throw new Error("Canvas 2D context not available");
     ctx.putImageData(processed, 0, 0);
     return canvas.toDataURL("image/jpeg", 0.88);
+  }).catch((err) => {
+    previewCache.delete(cacheKey);
+    throw err;
   });
+
+  previewCache.set(cacheKey, promise);
+  return promise;
 }
