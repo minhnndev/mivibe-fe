@@ -1,4 +1,14 @@
 import { useEffect, useState, useRef } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
 import { renderLutPreview } from "../lutEngine";
 import type { Lut } from "../types";
 
@@ -15,6 +25,7 @@ type LutPreviewCardProps = {
   onClick?: () => void;
   selected?: boolean;
   showBadge?: boolean;
+  theme?: "dark" | "light";
 };
 
 export default function LutPreviewCard({
@@ -23,6 +34,7 @@ export default function LutPreviewCard({
   onClick,
   selected = false,
   showBadge = true,
+  theme = "dark",
 }: LutPreviewCardProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [largePreview, setLargePreview] = useState<string | null>(null);
@@ -31,7 +43,16 @@ export default function LutPreviewCard({
   const [error, setError] = useState<string | null>(null);
   const [showCompare, setShowCompare] = useState(false);
   const [comparePosition, setComparePosition] = useState(50);
+  const compareAreaRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef(false);
+  const isLight = theme === "light";
+
+  const updateComparePosition = (clientX: number) => {
+    const rect = compareAreaRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const next = ((clientX - rect.left) / rect.width) * 100;
+    setComparePosition(Math.min(100, Math.max(0, next)));
+  };
 
   const imgUrl = previewImage || DEFAULT_PREVIEW_IMAGES[0]!;
   const lutUrl = lut.storage_key || lut.filename;
@@ -89,121 +110,168 @@ export default function LutPreviewCard({
 
   return (
     <>
-      <div
+      <Card
         onClick={onClick}
-        className={`group relative rounded-xl overflow-hidden cursor-pointer transition-all duration-200 ${
+        className={`group relative cursor-pointer overflow-hidden p-0 transition-all duration-200 ${
           selected ? "ring-2 ring-white scale-[1.02]" : "hover:scale-[1.02]"
+        } ${
+          isLight
+            ? "border border-neutral-200 bg-white text-neutral-950 shadow-sm"
+            : "border-0 bg-[#111] text-white"
         }`}
-        style={{ background: "#111" }}
       >
         {/* Preview Image */}
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={(e) => {
             e.stopPropagation();
             setShowCompare(true);
           }}
-          className="relative block w-full aspect-[4/3] overflow-hidden text-left"
+          className="relative block h-auto w-full overflow-hidden rounded-none p-0 text-left hover:bg-transparent"
         >
-          {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/5">
-              <div className="w-6 h-6 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
-            </div>
-          )}
-          {error && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/20 text-red-400 text-xs p-2 text-center">
-              <span className="text-lg mb-1">⚠</span>
-              Failed to render
-            </div>
-          )}
-          {preview && (
-            <img
-              src={preview}
-              alt={lut.name}
-              className="w-full h-full object-cover"
-            />
-          )}
-          <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-1 text-[10px] text-white/60 opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
-            Click to compare
+          <span className="block aspect-[4/3] w-full">
+            {loading && (
+              <div
+                className={`absolute inset-0 flex items-center justify-center ${
+                  isLight ? "bg-neutral-100" : "bg-white/5"
+                }`}
+              >
+                <div
+                  className={`w-6 h-6 animate-spin rounded-full border-2 ${
+                    isLight
+                      ? "border-neutral-300 border-t-neutral-900"
+                      : "border-white/20 border-t-white/80"
+                  }`}
+                />
+              </div>
+            )}
+            {error && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/20 text-red-400 text-xs p-2 text-center">
+                <span className="text-lg mb-1">⚠</span>
+                Failed to render
+              </div>
+            )}
+            {preview && (
+              <img
+                src={preview}
+                alt={lut.name}
+                className="w-full h-full object-cover"
+              />
+            )}
+            <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-1 text-[10px] text-white/60 opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
+              Click to compare
+            </span>
+            {!lut.is_active && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <Badge className="border-white/20 bg-transparent px-2 py-0.5 text-xs text-white/60 hover:bg-transparent">
+                  Inactive
+                </Badge>
+              </div>
+            )}
           </span>
-          {!lut.is_active && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-              <span className="text-white/60 text-xs font-body border border-white/20 rounded-full px-2 py-0.5">
-                Inactive
-              </span>
-            </div>
-          )}
-        </button>
+        </Button>
 
         {/* Info */}
         <div className="p-3">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-white text-sm font-body font-medium leading-tight">
+              <p
+                className={`text-sm font-body font-medium leading-tight ${
+                  isLight ? "text-neutral-950" : "text-white"
+                }`}
+              >
                 {lut.name}
               </p>
-              <p className="text-white/40 text-xs font-body mt-0.5">
+              <p
+                className={`text-xs font-body mt-0.5 ${
+                  isLight ? "text-neutral-500" : "text-white/40"
+                }`}
+              >
                 {lut.filename}
               </p>
             </div>
             {showBadge && lut.is_free && (
-              <span className="shrink-0 text-[10px] font-body font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full px-2 py-0.5">
+              <Badge className="shrink-0 border-emerald-500/30 bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-400 hover:bg-emerald-500/20">
                 Free
-              </span>
+              </Badge>
             )}
           </div>
           {lut.tags?.length ? (
             <div className="flex flex-wrap gap-1 mt-2">
               {lut.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="text-[10px] text-white/30 font-body">
+                <span
+                  key={tag}
+                  className={`text-[10px] font-body ${
+                    isLight ? "text-neutral-400" : "text-white/30"
+                  }`}
+                >
                   #{tag}
                 </span>
               ))}
             </div>
           ) : null}
         </div>
-      </div>
+      </Card>
       {showCompare && (
-        <div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowCompare(false);
-          }}
-        >
-          <div
-            className="relative w-full max-w-7xl overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d0d] shadow-2xl"
+        <Dialog open onOpenChange={setShowCompare}>
+          <DialogContent
+            className={`z-[120] max-w-7xl gap-0 overflow-hidden p-0 shadow-2xl sm:max-w-7xl ${
+              isLight
+                ? "border-neutral-200 bg-white text-neutral-950"
+                : "border-white/10 bg-[#0d0d0d] text-white"
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <DialogHeader
+              className={`flex-row items-center justify-between px-4 py-3 ${
+                isLight ? "border-b border-neutral-200" : "border-b border-white/10"
+              }`}
+            >
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-white">
+                <DialogTitle
+                  className={`truncate text-sm font-medium ${
+                    isLight ? "text-neutral-950" : "text-white"
+                  }`}
+                >
                   {lut.name}
-                </p>
-                <p className="truncate text-xs text-white/35">
+                </DialogTitle>
+                <p
+                  className={`truncate text-xs ${
+                    isLight ? "text-neutral-500" : "text-white/35"
+                  }`}
+                >
                   Drag slider to compare original and LUT
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowCompare(false)}
-                className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/60 transition-colors hover:border-white/25 hover:text-white"
-              >
-                Close
-              </button>
-            </div>
+            </DialogHeader>
 
             <div className="relative bg-black">
-              <div className="relative mx-auto aspect-[16/9] max-h-[82vh] overflow-hidden">
+              <div
+                ref={compareAreaRef}
+                className="relative mx-auto aspect-[16/9] max-h-[82vh] overflow-hidden select-none touch-none"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  updateComparePosition(e.clientX);
+                }}
+                onPointerMove={(e) => {
+                  if (e.buttons !== 1) return;
+                  e.preventDefault();
+                  updateComparePosition(e.clientX);
+                }}
+              >
                 <img
                   src={largePreview || imgUrl}
                   alt={`${lut.name} applied`}
-                  className="absolute inset-0 h-full w-full object-contain"
+                  draggable={false}
+                  className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
                 />
                 <img
                   src={imgUrl}
                   alt="Original sample"
-                  className="absolute inset-0 h-full w-full object-contain"
+                  draggable={false}
+                  className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
                   style={{
                     clipPath: `inset(0 ${100 - comparePosition}% 0 0)`,
                   }}
@@ -214,10 +282,14 @@ export default function LutPreviewCard({
                   </div>
                 )}
                 <div
-                  className="absolute top-0 h-full w-px bg-white shadow-[0_0_20px_rgba(255,255,255,0.8)]"
-                  style={{ left: `${comparePosition}%` }}
+                  className="pointer-events-none absolute top-0 h-full w-px -translate-x-1/2 bg-white shadow-[0_0_20px_rgba(255,255,255,0.8)]"
+                  style={{
+                    left: `clamp(18px, ${comparePosition}%, calc(100% - 18px))`,
+                  }}
                 >
-                  <div className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/40 bg-black/70 backdrop-blur" />
+                  <div className="absolute left-1/2 top-1/2 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-black/70 backdrop-blur">
+                    <div className="h-3 w-px bg-white/80" />
+                  </div>
                 </div>
                 <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-[11px] text-white/70 backdrop-blur">
                   Original
@@ -226,17 +298,16 @@ export default function LutPreviewCard({
                   LUT
                 </div>
               </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={comparePosition}
-                onChange={(e) => setComparePosition(Number(e.target.value))}
-                className="absolute inset-x-4 bottom-4 accent-white"
+              <Slider
+                min={0}
+                max={100}
+                value={[comparePosition]}
+                onValueChange={([value]) => setComparePosition(value ?? 50)}
+                className="absolute inset-x-4 bottom-4 w-auto opacity-0"
               />
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );

@@ -1,5 +1,23 @@
 import { useState } from "react";
-import { X, Save } from "lucide-react";
+import { Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { KNOWN_CUBE_FILES } from "../store";
 import type { Category, Lut, LutInput } from "../types";
 
@@ -8,6 +26,7 @@ type LutEditModalProps = {
   categories: Category[];
   onSave: (lut: LutInput) => void;
   onClose: () => void;
+  theme?: "dark" | "light";
 };
 
 type LutFormState = {
@@ -34,8 +53,10 @@ export default function LutEditModal({
   categories,
   onSave,
   onClose,
+  theme = "dark",
 }: LutEditModalProps) {
   const isNew = !lut?.id;
+  const isLight = theme === "light";
   const [form, setForm] = useState<LutFormState>(() => {
     const initial: LutFormState = {
       name: "",
@@ -100,25 +121,40 @@ export default function LutEditModal({
     ["is_free", "Free"],
   ];
 
+  const labelClassName = isLight
+    ? "text-neutral-600 text-xs font-body mb-1.5 block"
+    : "text-white/60 text-xs font-body mb-1.5 block";
+  const inputClassName = isLight
+    ? "border-neutral-200 bg-white text-neutral-950 placeholder:text-neutral-400 focus-visible:border-neutral-300 focus-visible:ring-neutral-200"
+    : "border-white/10 bg-white/5 text-white placeholder:text-white/20 focus-visible:border-white/30 focus-visible:ring-white/10";
+  const selectContentClassName = isLight
+    ? "border-neutral-200 bg-white text-neutral-950 shadow-lg"
+    : "border-white/10 bg-[#111] text-white";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="relative w-full max-w-lg bg-[#111] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h2 className="text-white font-heading italic text-xl">
-            {isNew ? "Add LUT" : "Edit LUT"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-white/40 hover:text-white transition-colors"
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        className={`max-w-lg gap-0 overflow-hidden p-0 shadow-2xl sm:max-w-lg ${
+          isLight
+            ? "border-neutral-200 bg-white text-neutral-950"
+            : "border-white/10 bg-[#111] text-white"
+        }`}
+      >
+        <DialogHeader
+          className={
+            isLight
+              ? "border-b border-neutral-200 p-6"
+              : "border-b border-white/10 p-6"
+          }
+        >
+          <DialogTitle
+            className={`font-heading text-xl italic ${
+              isLight ? "text-neutral-950" : "text-white"
+            }`}
           >
-            <X size={20} />
-          </button>
-        </div>
+            {isNew ? "Add LUT" : "Edit LUT"}
+          </DialogTitle>
+        </DialogHeader>
 
         <form
           onSubmit={handleSubmit}
@@ -126,71 +162,78 @@ export default function LutEditModal({
         >
           {/* Name */}
           <div>
-            <label className="text-white/60 text-xs font-body mb-1.5 block">
+            <label className={labelClassName}>
               Name *
             </label>
-            <input
+            <Input
               required
               value={form.name}
               onChange={(e) => set("name", e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-body focus:outline-none focus:border-white/30"
+              className={inputClassName}
               placeholder="Cinematic Warm"
             />
           </div>
 
           {/* Filename */}
           <div>
-            <label className="text-white/60 text-xs font-body mb-1.5 block">
+            <label className={labelClassName}>
               LUT File *
             </label>
-            <select
-              required
+            <Select
               value={form.filename}
-              onChange={(e) => {
-                set("filename", e.target.value);
-                set("storage_key", e.target.value);
+              onValueChange={(value) => {
+                set("filename", value);
+                set("storage_key", value);
               }}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-body focus:outline-none focus:border-white/30"
             >
-              {KNOWN_CUBE_FILES.map((f) => (
-                <option key={f} value={f} style={{ background: "#111" }}>
-                  {f}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className={`w-full rounded-lg ${inputClassName}`}>
+                <SelectValue placeholder="Select LUT file" />
+              </SelectTrigger>
+              <SelectContent className={selectContentClassName}>
+                {KNOWN_CUBE_FILES.map((f) => (
+                  <SelectItem key={f} value={f}>
+                    {f}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Category */}
           <div>
-            <label className="text-white/60 text-xs font-body mb-1.5 block">
+            <label className={labelClassName}>
               Category
             </label>
-            <select
-              value={form.category_id || ""}
-              onChange={(e) => set("category_id", e.target.value || null)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-body focus:outline-none focus:border-white/30"
+            <Select
+              value={form.category_id ?? "none"}
+              onValueChange={(value) =>
+                set("category_id", value === "none" ? null : value)
+              }
             >
-              <option value="" style={{ background: "#111" }}>
-                — No Category —
-              </option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id} style={{ background: "#111" }}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className={`w-full rounded-lg ${inputClassName}`}>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent className={selectContentClassName}>
+                <SelectItem value="none">No Category</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Description */}
           <div>
-            <label className="text-white/60 text-xs font-body mb-1.5 block">
+            <label className={labelClassName}>
               Description
             </label>
-            <textarea
+            <Textarea
               value={form.description || ""}
               onChange={(e) => set("description", e.target.value)}
               rows={2}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-body focus:outline-none focus:border-white/30 resize-none"
+              className={`resize-none ${inputClassName}`}
               placeholder="Short description..."
             />
           </div>
@@ -198,45 +241,44 @@ export default function LutEditModal({
           {/* Intensity + Sort Order */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-white/60 text-xs font-body mb-1.5 block">
+              <label className={labelClassName}>
                 Intensity{" "}
-                <span className="text-white/30">
+                <span className={isLight ? "text-neutral-400" : "text-white/30"}>
                   ({String(form.intensity)})
                 </span>
               </label>
-              <input
-                type="range"
+              <Slider
                 min="0"
                 max="1"
                 step="0.05"
-                value={form.intensity}
-                onChange={(e) => set("intensity", e.target.value)}
-                className="w-full accent-white"
+                value={[Number(form.intensity)]}
+                onValueChange={([value]) => set("intensity", value ?? 1)}
+                className="py-3"
               />
             </div>
             <div>
-              <label className="text-white/60 text-xs font-body mb-1.5 block">
+              <label className={labelClassName}>
                 Sort Order
               </label>
-              <input
+              <Input
                 type="number"
                 min="0"
                 value={form.sort_order}
                 onChange={(e) => set("sort_order", e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-body focus:outline-none focus:border-white/30"
+                className={inputClassName}
               />
             </div>
           </div>
 
           {/* Tags */}
           <div>
-            <label className="text-white/60 text-xs font-body mb-1.5 block">
-              Tags <span className="text-white/30">(comma-separated)</span>
+            <label className={labelClassName}>
+              Tags <span className={isLight ? "text-neutral-400" : "text-white/30"}>(comma-separated)</span>
             </label>
-            <input
+            <Input
               value={form.tags}
               onChange={(e) => set("tags", e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm font-body focus:outline-none focus:border-white/30"
+              className={inputClassName}
               placeholder="warm, cinematic, dramatic"
             />
           </div>
@@ -248,33 +290,35 @@ export default function LutEditModal({
                 key={key}
                 className="flex items-center gap-2 cursor-pointer"
               >
-                <div
-                  onClick={() => set(key, !form[key])}
-                  className={`w-9 h-5 rounded-full transition-colors relative ${
-                    form[key] ? "bg-white" : "bg-white/20"
+                <Switch
+                  checked={Boolean(form[key])}
+                  onCheckedChange={(checked) => set(key, checked)}
+                />
+                <span
+                  className={`text-sm font-body ${
+                    isLight ? "text-neutral-600" : "text-white/60"
                   }`}
                 >
-                  <div
-                    className={`absolute top-0.5 w-4 h-4 rounded-full bg-black transition-all ${
-                      form[key] ? "left-[18px]" : "left-0.5"
-                    }`}
-                  />
-                </div>
-                <span className="text-white/60 text-sm font-body">{label}</span>
+                  {label}
+                </span>
               </label>
             ))}
           </div>
 
           {/* Submit */}
-          <button
+          <Button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 bg-white text-black rounded-xl py-2.5 font-body font-medium text-sm hover:bg-white/90 transition-colors mt-2"
+            className={
+              isLight
+                ? "mt-2 w-full bg-neutral-950 text-white hover:bg-neutral-800"
+                : "mt-2 w-full bg-white text-black hover:bg-white/90"
+            }
           >
             <Save size={16} />
             {isNew ? "Create LUT" : "Save Changes"}
-          </button>
+          </Button>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

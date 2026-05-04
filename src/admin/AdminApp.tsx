@@ -14,7 +14,23 @@ import {
   CheckCircle,
   AlertCircle,
   Layers,
+  Moon,
+  Sun,
 } from "lucide-react";
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Switch } from "@/components/ui/switch";
 import {
   getLuts,
   getCategories,
@@ -69,6 +85,7 @@ export default function AdminApp() {
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const showToast = (msg: string, type: Toast["type"] = "success") => {
@@ -160,9 +177,15 @@ export default function AdminApp() {
   };
 
   const activeLuts = luts.filter((l) => l.is_active).length;
+  const isLight = theme === "light";
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-body">
+    <div className={isLight ? "light" : "dark"}>
+    <div
+      className={`min-h-screen font-body transition-colors ${
+        isLight ? "bg-neutral-100 text-neutral-950" : "bg-[#0a0a0a] text-white"
+      }`}
+    >
       {/* Toast */}
       {toast && (
         <div
@@ -183,20 +206,46 @@ export default function AdminApp() {
       )}
 
       {/* Sidebar */}
-      <div className="fixed left-0 top-0 bottom-0 w-64 bg-[#0d0d0d] border-r border-white/5 flex flex-col z-20">
+      <div
+        className={`fixed left-0 top-0 bottom-0 w-64 flex flex-col z-20 transition-colors ${
+          isLight
+            ? "border-r border-neutral-200 bg-white"
+            : "border-r border-white/5 bg-[#0d0d0d]"
+        }`}
+      >
         {/* Logo */}
-        <div className="p-6 border-b border-white/5">
+        <div
+          className={`p-6 ${
+            isLight ? "border-b border-neutral-200" : "border-b border-white/5"
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0">
-              <span className="text-black font-heading italic text-sm font-bold">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                isLight ? "bg-black" : "bg-white"
+              }`}
+            >
+              <span
+                className={`font-heading italic text-sm font-bold ${
+                  isLight ? "text-white" : "text-black"
+                }`}
+              >
                 S
               </span>
             </div>
             <div>
-              <p className="text-white font-heading italic text-base leading-tight">
+              <p
+                className={`font-heading italic text-base leading-tight ${
+                  isLight ? "text-neutral-950" : "text-white"
+                }`}
+              >
                 Mivibe
               </p>
-              <p className="text-white/30 text-xs font-body">
+              <p
+                className={`text-xs font-body ${
+                  isLight ? "text-neutral-500" : "text-white/30"
+                }`}
+              >
                 Mivibe LUTs Admin
               </p>
             </div>
@@ -220,34 +269,65 @@ export default function AdminApp() {
             },
             { id: "export" as const, icon: Download, label: "Export & API" },
           ].map((item) => (
-            <button
+            <Button
               key={item.id}
+              variant="ghost"
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
+              className={`h-auto w-full justify-start gap-3 rounded-xl px-3 py-2.5 ${
                 activeTab === item.id
-                  ? "bg-white/10 text-white"
-                  : "text-white/40 hover:text-white hover:bg-white/5"
+                  ? isLight
+                    ? "bg-neutral-100 text-neutral-950"
+                    : "bg-white/10 text-white"
+                  : isLight
+                    ? "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950"
+                    : "text-white/40 hover:bg-white/5 hover:text-white"
               }`}
             >
               <item.icon size={16} />
               <span className="flex-1 text-left">{item.label}</span>
               {item.count !== undefined && (
-                <span className="text-xs bg-white/10 rounded-full px-2 py-0.5 text-white/50">
+                <Badge
+                  className={`px-2 py-0.5 ${
+                    isLight
+                      ? "bg-neutral-200 text-neutral-500 hover:bg-neutral-200"
+                      : "bg-white/10 text-white/50 hover:bg-white/10"
+                  }`}
+                >
                   {item.count}
-                </span>
+                </Badge>
               )}
-            </button>
+            </Button>
           ))}
         </nav>
 
         {/* Stats */}
-        <div className="p-4 border-t border-white/5 space-y-2">
+        <div
+          className={`space-y-3 p-4 ${
+            isLight ? "border-t border-neutral-200" : "border-t border-white/5"
+          }`}
+        >
+          <div className="flex items-center justify-between text-xs font-body">
+            <span
+              className={isLight ? "text-neutral-500" : "text-white/30"}
+            >
+              Theme
+            </span>
+            <label className="flex items-center gap-2">
+              <Sun size={13} className={isLight ? "text-amber-500" : "text-white/25"} />
+              <Switch
+                checked={!isLight}
+                onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                size="sm"
+              />
+              <Moon size={13} className={isLight ? "text-neutral-400" : "text-sky-300"} />
+            </label>
+          </div>
           <div className="flex justify-between text-xs font-body">
-            <span className="text-white/30">Active LUTs</span>
+            <span className={isLight ? "text-neutral-500" : "text-white/30"}>Active LUTs</span>
             <span className="text-emerald-400">{activeLuts}</span>
           </div>
           <div className="flex justify-between text-xs font-body">
-            <span className="text-white/30">Supabase</span>
+            <span className={isLight ? "text-neutral-500" : "text-white/30"}>Supabase</span>
             <span
               className={isConfigured ? "text-emerald-400" : "text-orange-400"}
             >
@@ -265,108 +345,177 @@ export default function AdminApp() {
             {/* LUT List Panel */}
             <div className="flex-1 flex flex-col overflow-hidden">
               {/* Toolbar */}
-              <div className="flex items-center gap-3 p-5 border-b border-white/5 shrink-0">
+              <div
+                className={`flex items-center gap-3 p-5 shrink-0 ${
+                  isLight ? "border-b border-neutral-200 bg-white" : "border-b border-white/5"
+                }`}
+              >
                 <div className="relative flex-1 max-w-xs">
                   <Search
                     size={14}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30"
+                    className={`absolute left-3 top-1/2 -translate-y-1/2 ${
+                      isLight ? "text-neutral-400" : "text-white/30"
+                    }`}
                   />
-                  <input
+                  <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search LUTs..."
-                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-white/20"
+                    className={
+                      isLight
+                        ? "rounded-lg border-neutral-200 bg-white pl-8 text-neutral-950 placeholder:text-neutral-400 focus-visible:border-neutral-300 focus-visible:ring-neutral-200"
+                        : "rounded-lg border-white/10 bg-white/5 pl-8 text-white placeholder:text-white/20 focus-visible:border-white/20 focus-visible:ring-white/10"
+                    }
                   />
                 </div>
 
                 {/* Category filter */}
-                <select
+                <Select
                   value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/70 focus:outline-none"
-                  style={{ background: "#111" }}
+                  onValueChange={setFilterCategory}
                 >
-                  <option value="all">All Categories</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger
+                    className={
+                      isLight
+                        ? "w-40 rounded-lg border-neutral-200 bg-white text-neutral-700 focus-visible:ring-neutral-200"
+                        : "w-40 rounded-lg border-white/10 bg-white/5 text-white/70 focus-visible:ring-white/10"
+                    }
+                  >
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent
+                    className={
+                      isLight
+                        ? "rounded-lg border-neutral-200 bg-white text-neutral-950 shadow-lg"
+                        : "rounded-lg border-white/10 bg-[#111] text-white"
+                    }
+                  >
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 {/* Status filter */}
-                <select
+                <Select
                   value={filterStatus}
-                  onChange={(e) =>
-                    setFilterStatus(e.target.value as FilterStatus)
-                  }
-                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/70 focus:outline-none"
-                  style={{ background: "#111" }}
+                  onValueChange={(value) => setFilterStatus(value as FilterStatus)}
                 >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="free">Free</option>
-                </select>
+                  <SelectTrigger
+                    className={
+                      isLight
+                        ? "w-36 rounded-lg border-neutral-200 bg-white text-neutral-700 focus-visible:ring-neutral-200"
+                        : "w-36 rounded-lg border-white/10 bg-white/5 text-white/70 focus-visible:ring-white/10"
+                    }
+                  >
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent
+                    className={
+                      isLight
+                        ? "rounded-lg border-neutral-200 bg-white text-neutral-950 shadow-lg"
+                        : "rounded-lg border-white/10 bg-[#111] text-white"
+                    }
+                  >
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="free">Free</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                <div className="flex gap-1 bg-white/5 rounded-lg p-1">
-                  <button
-                    onClick={() => setView("grid")}
-                    className={`p-1.5 rounded ${
-                      view === "grid"
-                        ? "bg-white/10 text-white"
-                        : "text-white/30"
-                    }`}
+                <ToggleGroup
+                  type="single"
+                  value={view}
+                  onValueChange={(value) => value && setView(value as ViewMode)}
+                  className={
+                    isLight ? "rounded-lg bg-neutral-100 p-1" : "rounded-lg bg-white/5 p-1"
+                  }
+                >
+                  <ToggleGroupItem
+                    value="grid"
+                    aria-label="Grid view"
+                    className={
+                      isLight
+                        ? "size-7 rounded text-neutral-400 data-[state=on]:bg-white data-[state=on]:text-neutral-950"
+                        : "size-7 rounded text-white/30 data-[state=on]:bg-white/10 data-[state=on]:text-white"
+                    }
                   >
                     <LayoutGrid size={14} />
-                  </button>
-                  <button
-                    onClick={() => setView("list")}
-                    className={`p-1.5 rounded ${
-                      view === "list"
-                        ? "bg-white/10 text-white"
-                        : "text-white/30"
-                    }`}
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="list"
+                    aria-label="List view"
+                    className={
+                      isLight
+                        ? "size-7 rounded text-neutral-400 data-[state=on]:bg-white data-[state=on]:text-neutral-950"
+                        : "size-7 rounded text-white/30 data-[state=on]:bg-white/10 data-[state=on]:text-white"
+                    }
                   >
                     <List size={14} />
-                  </button>
-                </div>
+                  </ToggleGroupItem>
+                </ToggleGroup>
 
-                <button
+                <Button
                   onClick={() => setEditModal({})}
-                  className="flex items-center gap-2 bg-white text-black rounded-lg px-4 py-2 text-sm font-medium hover:bg-white/90 transition-colors"
+                  className={
+                    isLight
+                      ? "bg-neutral-950 text-white hover:bg-neutral-800"
+                      : "bg-white text-black hover:bg-white/90"
+                  }
                 >
                   <Plus size={14} /> Add LUT
-                </button>
+                </Button>
               </div>
 
               {/* Preview image selector */}
-              <div className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.02] border-b border-white/5 shrink-0">
-                <Image size={13} className="text-white/30" />
-                <span className="text-white/30 text-xs">Preview with:</span>
+              <div
+                className={`flex items-center gap-2 px-5 py-2.5 shrink-0 ${
+                  isLight
+                    ? "border-b border-neutral-200 bg-neutral-50"
+                    : "border-b border-white/5 bg-white/[0.02]"
+                }`}
+              >
+                <Image size={13} className={isLight ? "text-neutral-400" : "text-white/30"} />
+                <span className={isLight ? "text-neutral-500 text-xs" : "text-white/30 text-xs"}>Preview with:</span>
                 {DEFAULT_IMAGES.map((img) => (
-                  <button
+                  <Button
                     key={img.label}
+                    variant="ghost"
+                    size="xs"
                     onClick={() => setPreviewImage(img.url)}
-                    className={`text-xs px-2.5 py-1 rounded-full transition-colors ${
+                    className={`rounded-full px-2.5 py-1 ${
                       previewImage === img.url && !customImage
-                        ? "bg-white/15 text-white"
-                        : "text-white/30 hover:text-white"
+                        ? isLight
+                          ? "bg-neutral-200 text-neutral-950"
+                          : "bg-white/15 text-white"
+                        : isLight
+                          ? "text-neutral-500 hover:bg-neutral-200 hover:text-neutral-950"
+                          : "text-white/30 hover:bg-white/5 hover:text-white"
                     }`}
                   >
                     {img.label}
-                  </button>
+                  </Button>
                 ))}
-                <button
+                <Button
+                  variant="ghost"
+                  size="xs"
                   onClick={() => fileInputRef.current?.click()}
-                  className={`text-xs px-2.5 py-1 rounded-full transition-colors flex items-center gap-1 ${
+                  className={`rounded-full px-2.5 py-1 ${
                     customImage
-                      ? "bg-white/15 text-white"
-                      : "text-white/30 hover:text-white"
+                      ? isLight
+                        ? "bg-neutral-200 text-neutral-950"
+                        : "bg-white/15 text-white"
+                      : isLight
+                        ? "text-neutral-500 hover:bg-neutral-200 hover:text-neutral-950"
+                        : "text-white/30 hover:bg-white/5 hover:text-white"
                   }`}
                 >
                   <Upload size={11} /> Custom
-                </button>
+                </Button>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -374,19 +523,31 @@ export default function AdminApp() {
                   className="hidden"
                   onChange={handleCustomImageUpload}
                 />
-                <span className="text-white/20 text-xs ml-auto">
+                <span className={isLight ? "text-neutral-400 text-xs ml-auto" : "text-white/20 text-xs ml-auto"}>
                   {filteredLuts.length} LUTs
                 </span>
               </div>
 
               {/* Grid/List */}
-              <div className="flex-1 overflow-y-auto p-5">
+              <div
+                className={`flex-1 overflow-y-auto p-5 ${
+                  isLight ? "bg-neutral-100" : ""
+                }`}
+              >
                 {loading ? (
-                  <div className="flex items-center justify-center h-64 text-white/30 text-sm">
+                  <div
+                    className={`flex items-center justify-center h-64 text-sm ${
+                      isLight ? "text-neutral-400" : "text-white/30"
+                    }`}
+                  >
                     Loading...
                   </div>
                 ) : filteredLuts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-64 gap-3 text-white/20">
+                  <div
+                    className={`flex flex-col items-center justify-center h-64 gap-3 ${
+                      isLight ? "text-neutral-400" : "text-white/20"
+                    }`}
+                  >
                     <Layers size={32} />
                     <p className="text-sm">No LUTs found</p>
                   </div>
@@ -396,35 +557,37 @@ export default function AdminApp() {
                       <div key={lut.id} className="relative group">
                         <LutPreviewCard
                           lut={lut}
-                          categories={categories}
                           previewImage={previewImage}
                           selected={selectedLut?.id === lut.id}
-                          editable
-                          onSave={handleSaveLut}
                           onClick={() => setSelectedLut(lut)}
+                          theme={theme}
                         />
                         {/* Action overlay */}
                         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditModal(lut);
-                            }}
-                            className="w-7 h-7 bg-black/80 rounded-lg flex items-center justify-center text-white/60 hover:text-white"
-                          >
-                            <Edit2 size={12} />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void handleDeleteLut(lut.id);
-                            }}
-                            className="w-7 h-7 bg-black/80 rounded-lg flex items-center justify-center text-red-400/60 hover:text-red-400"
-                          >
-                            <Trash2 size={12} />
-                          </button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditModal(lut);
+                              }}
+                              className="bg-black/80 text-white/60 hover:bg-black/90 hover:text-white"
+                            >
+                              <Edit2 size={12} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleDeleteLut(lut.id);
+                              }}
+                              className="bg-black/80 text-red-400/60 hover:bg-black/90 hover:text-red-400"
+                            >
+                              <Trash2 size={12} />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
                     ))}
                   </div>
                 ) : (
@@ -440,57 +603,91 @@ export default function AdminApp() {
                           onClick={() => setSelectedLut(lut)}
                           className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-colors border ${
                             selectedLut?.id === lut.id
-                              ? "border-white/20 bg-white/10"
-                              : "border-white/5 bg-white/[0.03] hover:bg-white/[0.06]"
+                              ? isLight
+                                ? "border-neutral-300 bg-white shadow-sm"
+                                : "border-white/20 bg-white/10"
+                              : isLight
+                                ? "border-neutral-200 bg-white/70 hover:bg-white"
+                                : "border-white/5 bg-white/[0.03] hover:bg-white/[0.06]"
                           }`}
                         >
                           <div
                             className={`w-2 h-2 rounded-full shrink-0 ${
-                              lut.is_active ? "bg-emerald-400" : "bg-white/20"
+                              lut.is_active
+                                ? "bg-emerald-400"
+                                : isLight
+                                  ? "bg-neutral-300"
+                                  : "bg-white/20"
                             }`}
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-white text-sm font-medium truncate">
+                              <span
+                                className={`text-sm font-medium truncate ${
+                                  isLight ? "text-neutral-950" : "text-white"
+                                }`}
+                              >
                                 {lut.name}
                               </span>
                               {lut.is_free && (
-                                <span className="text-[10px] text-emerald-400 border border-emerald-500/30 rounded-full px-1.5 py-0.5">
-                                  Free
-                                </span>
-                              )}
+                              <Badge className="border-emerald-500/30 bg-transparent px-1.5 py-0.5 text-[10px] text-emerald-400 hover:bg-transparent">
+                                Free
+                              </Badge>
+                            )}
                             </div>
-                            <p className="text-white/30 text-xs">
+                            <p
+                              className={`text-xs ${
+                                isLight ? "text-neutral-500" : "text-white/30"
+                              }`}
+                            >
                               {lut.filename}
                             </p>
                           </div>
                           {cat && (
-                            <span className="text-xs text-white/30 bg-white/5 rounded-full px-2.5 py-1">
+                            <Badge
+                              className={
+                                isLight
+                                  ? "bg-neutral-100 px-2.5 py-1 text-neutral-500 hover:bg-neutral-100"
+                                  : "bg-white/5 px-2.5 py-1 text-white/30 hover:bg-white/5"
+                              }
+                            >
                               {cat.name}
-                            </span>
+                            </Badge>
                           )}
-                          <span className="text-xs text-white/20">
+                          <span className={isLight ? "text-xs text-neutral-400" : "text-xs text-white/20"}>
                             ×{lut.intensity}
                           </span>
                           <div className="flex gap-1">
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditModal(lut);
                               }}
-                              className="p-1.5 text-white/30 hover:text-white transition-colors"
+                              className={
+                                isLight
+                                  ? "text-neutral-400 hover:bg-neutral-100 hover:text-neutral-950"
+                                  : "text-white/30 hover:bg-white/5 hover:text-white"
+                              }
                             >
                               <Edit2 size={13} />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 void handleDeleteLut(lut.id);
                               }}
-                              className="p-1.5 text-white/30 hover:text-red-400 transition-colors"
+                              className={
+                                isLight
+                                  ? "text-neutral-400 hover:bg-red-50 hover:text-red-500"
+                                  : "text-white/30 hover:bg-red-500/10 hover:text-red-400"
+                              }
                             >
                               <Trash2 size={13} />
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       );
@@ -502,25 +699,46 @@ export default function AdminApp() {
 
             {/* Detail Panel */}
             {selectedLut && (
-              <div className="w-80 shrink-0 border-l border-white/5 flex flex-col overflow-y-auto">
-                <div className="p-5 border-b border-white/5 flex items-center justify-between">
-                  <h3 className="text-white font-heading italic text-lg">
+              <div
+                className={`w-80 shrink-0 flex flex-col overflow-y-auto ${
+                  isLight
+                    ? "border-l border-neutral-200 bg-white"
+                    : "border-l border-white/5"
+                }`}
+              >
+                <div
+                  className={`p-5 flex items-center justify-between ${
+                    isLight ? "border-b border-neutral-200" : "border-b border-white/5"
+                  }`}
+                >
+                  <h3
+                    className={`font-heading italic text-lg ${
+                      isLight ? "text-neutral-950" : "text-white"
+                    }`}
+                  >
                     LUT Detail
                   </h3>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setSelectedLut(null)}
-                    className="text-white/30 hover:text-white transition-colors"
+                    className={
+                      isLight
+                        ? "text-neutral-400 hover:bg-neutral-100 hover:text-neutral-950"
+                        : "text-white/30 hover:bg-white/5 hover:text-white"
+                    }
                   >
                     ✕
-                  </button>
+                  </Button>
                 </div>
                 <div className="p-5 space-y-5">
                   {/* Large preview */}
-                  <LutPreviewCard
-                    lut={selectedLut}
-                    previewImage={previewImage}
-                    showBadge={false}
-                  />
+                    <LutPreviewCard
+                      lut={selectedLut}
+                      previewImage={previewImage}
+                      showBadge={false}
+                      theme={theme}
+                    />
 
                   {/* Info */}
                   <div className="space-y-3">
@@ -546,14 +764,20 @@ export default function AdminApp() {
                       ] satisfies Array<[string, ReactNode]>
                     ).map(([k, v]) => (
                       <div key={k} className="flex justify-between text-xs">
-                        <span className="text-white/30">{k}</span>
-                        <span className="text-white/70">{v}</span>
+                        <span className={isLight ? "text-neutral-500" : "text-white/30"}>{k}</span>
+                        <span className={isLight ? "text-neutral-800" : "text-white/70"}>{v}</span>
                       </div>
                     ))}
                   </div>
 
                   {selectedLut.description && (
-                    <p className="text-white/40 text-xs leading-relaxed border-t border-white/5 pt-4">
+                    <p
+                      className={`text-xs leading-relaxed border-t pt-4 ${
+                        isLight
+                          ? "border-neutral-200 text-neutral-500"
+                          : "border-white/5 text-white/40"
+                      }`}
+                    >
                       {selectedLut.description}
                     </p>
                   )}
@@ -561,22 +785,31 @@ export default function AdminApp() {
                   {selectedLut.tags?.length ? (
                     <div className="flex flex-wrap gap-1">
                       {selectedLut.tags.map((t) => (
-                        <span
-                          key={t}
-                          className="text-xs bg-white/5 text-white/30 rounded-full px-2.5 py-1"
-                        >
-                          #{t}
-                        </span>
-                      ))}
+                            <Badge
+                              key={t}
+                              className={
+                                isLight
+                                  ? "bg-neutral-100 px-2.5 py-1 text-xs text-neutral-500 hover:bg-neutral-100"
+                                  : "bg-white/5 px-2.5 py-1 text-xs text-white/30 hover:bg-white/5"
+                              }
+                            >
+                              #{t}
+                            </Badge>
+                          ))}
                     </div>
                   ) : null}
 
-                  <button
+                  <Button
+                    variant="outline"
                     onClick={() => setEditModal(selectedLut)}
-                    className="w-full flex items-center justify-center gap-2 border border-white/10 rounded-xl py-2.5 text-white/60 hover:text-white hover:border-white/20 transition-colors text-sm"
+                    className={
+                      isLight
+                        ? "w-full border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-950"
+                        : "w-full border-white/10 bg-transparent text-white/60 hover:border-white/20 hover:bg-white/5 hover:text-white"
+                    }
                   >
                     <Edit2 size={14} /> Edit LUT
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -586,10 +819,18 @@ export default function AdminApp() {
         {/* ── Categories ──────────────────────────────────────── */}
         {activeTab === "categories" && (
           <div className="p-8 max-w-2xl">
-            <h1 className="text-white font-heading italic text-3xl mb-2">
+            <h1
+              className={`font-heading italic text-3xl mb-2 ${
+                isLight ? "text-neutral-950" : "text-white"
+              }`}
+            >
               Categories
             </h1>
-            <p className="text-white/40 text-sm font-body mb-8">
+            <p
+              className={`text-sm font-body mb-8 ${
+                isLight ? "text-neutral-500" : "text-white/40"
+              }`}
+            >
               Organize your LUTs into collections for the mobile app.
             </p>
             <CategoryManager
@@ -597,6 +838,7 @@ export default function AdminApp() {
               luts={luts}
               onSave={handleSaveCategory}
               onDelete={handleDeleteCategory}
+              theme={theme}
             />
           </div>
         )}
@@ -605,21 +847,33 @@ export default function AdminApp() {
         {activeTab === "export" && (
           <div className="p-8 max-w-3xl space-y-8">
             <div>
-              <h1 className="text-white font-heading italic text-3xl mb-2">
+              <h1
+                className={`font-heading italic text-3xl mb-2 ${
+                  isLight ? "text-neutral-950" : "text-white"
+                }`}
+              >
                 Export & Remote Update
               </h1>
-              <p className="text-white/40 text-sm font-body">
+              <p
+                className={`text-sm font-body ${
+                  isLight ? "text-neutral-500" : "text-white/40"
+                }`}
+              >
                 Export a manifest JSON for mobile apps to fetch LUT updates
                 remotely.
               </p>
             </div>
 
             {/* Supabase status */}
-            <div
+            <Alert
               className={`rounded-2xl p-6 border ${
                 isConfigured
-                  ? "border-emerald-500/20 bg-emerald-900/10"
-                  : "border-orange-500/20 bg-orange-900/10"
+                  ? isLight
+                    ? "border-emerald-200 bg-emerald-50"
+                    : "border-emerald-500/20 bg-emerald-900/10"
+                  : isLight
+                    ? "border-orange-200 bg-orange-50"
+                    : "border-orange-500/20 bg-orange-900/10"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -630,7 +884,13 @@ export default function AdminApp() {
                 )}
                 <h3
                   className={`font-body font-medium text-sm ${
-                    isConfigured ? "text-emerald-300" : "text-orange-300"
+                    isConfigured
+                      ? isLight
+                        ? "text-emerald-700"
+                        : "text-emerald-300"
+                      : isLight
+                        ? "text-orange-700"
+                        : "text-orange-300"
                   }`}
                 >
                   {isConfigured
@@ -640,55 +900,71 @@ export default function AdminApp() {
               </div>
               {!isConfigured && (
                 <div className="space-y-2">
-                  <p className="text-orange-200/60 text-xs font-body">
+                  <p className={isLight ? "text-orange-700/70 text-xs font-body" : "text-orange-200/60 text-xs font-body"}>
                     Add these to your{" "}
-                    <code className="text-orange-300">.env</code> file:
+                    <code className={isLight ? "text-orange-700" : "text-orange-300"}>.env</code> file:
                   </p>
-                  <pre className="bg-black/40 rounded-lg p-3 text-xs text-orange-200/70 font-mono">
+                  <pre className={isLight ? "bg-white rounded-lg p-3 text-xs text-orange-800/70 font-mono" : "bg-black/40 rounded-lg p-3 text-xs text-orange-200/70 font-mono"}>
                     {`VITE_SUPABASE_URL=https://your-project.supabase.co\nVITE_SUPABASE_ANON_KEY=your-anon-key`}
                   </pre>
-                  <p className="text-orange-200/50 text-xs font-body">
+                  <p className={isLight ? "text-orange-700/60 text-xs font-body" : "text-orange-200/50 text-xs font-body"}>
                     Data is currently stored in localStorage only.
                   </p>
                 </div>
               )}
-            </div>
+            </Alert>
 
             {/* Export manifest */}
-            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4">
-              <h3 className="text-white font-body font-medium">
+            <Card
+              className={
+                isLight
+                  ? "space-y-4 border-neutral-200 bg-white p-6 text-neutral-950 shadow-sm"
+                  : "space-y-4 border-white/10 bg-white/[0.03] p-6 text-white"
+              }
+            >
+              <h3 className={isLight ? "text-neutral-950 font-body font-medium" : "text-white font-body font-medium"}>
                 Mobile Manifest JSON
               </h3>
-              <p className="text-white/40 text-xs leading-relaxed">
+              <p className={isLight ? "text-neutral-500 text-xs leading-relaxed" : "text-white/40 text-xs leading-relaxed"}>
                 Export a{" "}
-                <code className="text-white/60">luts-manifest.json</code> file
+                <code className={isLight ? "text-neutral-700" : "text-white/60"}>luts-manifest.json</code> file
                 containing all active LUTs with their metadata. Host this file
                 on your CDN and have your mobile app poll it for updates.
               </p>
-              <div className="bg-black/40 rounded-xl p-4 text-xs font-mono text-white/50 space-y-1">
+              <div className={isLight ? "bg-neutral-100 rounded-xl p-4 text-xs font-mono text-neutral-500 space-y-1" : "bg-black/40 rounded-xl p-4 text-xs font-mono text-white/50 space-y-1"}>
                 <div>
                   <span className="text-blue-400">GET</span>{" "}
-                  <span className="text-white/30">https://cdn.mivibe.app/</span>
+                  <span className={isLight ? "text-neutral-400" : "text-white/30"}>https://cdn.mivibe.app/</span>
                   <span className="text-emerald-400">luts-manifest.json</span>
                 </div>
-                <div className="mt-2 text-white/20">
+                <div className={isLight ? "mt-2 text-neutral-400" : "mt-2 text-white/20"}>
                   // Mobile app checks version field to detect updates
                 </div>
               </div>
-              <button
+              <Button
                 onClick={() => void handleExportManifest()}
-                className="flex items-center gap-2 bg-white text-black rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-white/90 transition-colors"
+                className={
+                  isLight
+                    ? "bg-neutral-950 text-white hover:bg-neutral-800"
+                    : "bg-white text-black hover:bg-white/90"
+                }
               >
                 <Download size={16} /> Export Manifest
-              </button>
-            </div>
+              </Button>
+            </Card>
 
             {/* Supabase REST API */}
-            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4">
-              <h3 className="text-white font-body font-medium">
+            <Card
+              className={
+                isLight
+                  ? "space-y-4 border-neutral-200 bg-white p-6 text-neutral-950 shadow-sm"
+                  : "space-y-4 border-white/10 bg-white/[0.03] p-6 text-white"
+              }
+            >
+              <h3 className={isLight ? "text-neutral-950 font-body font-medium" : "text-white font-body font-medium"}>
                 Supabase REST API
               </h3>
-              <p className="text-white/40 text-xs leading-relaxed">
+              <p className={isLight ? "text-neutral-500 text-xs leading-relaxed" : "text-white/40 text-xs leading-relaxed"}>
                 When Supabase is configured, mobile apps can fetch LUTs directly
                 via the REST API:
               </p>
@@ -710,29 +986,35 @@ export default function AdminApp() {
                     desc: "Fetch LUTs by category",
                   },
                 ].map((api, i) => (
-                  <div key={i} className="bg-black/40 rounded-xl p-3 space-y-1">
+                  <div key={i} className={isLight ? "bg-neutral-100 rounded-xl p-3 space-y-1" : "bg-black/40 rounded-xl p-3 space-y-1"}>
                     <div className="text-xs font-mono">
                       <span className="text-blue-400">{api.method}</span>{" "}
                       <span className="text-emerald-400 break-all">
                         {api.path}
                       </span>
                     </div>
-                    <p className="text-white/30 text-[11px]">{api.desc}</p>
+                    <p className={isLight ? "text-neutral-500 text-[11px]" : "text-white/30 text-[11px]"}>{api.desc}</p>
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
 
             {/* Preview manifest */}
             {manifest && (
-              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4">
-                <h3 className="text-white font-body font-medium text-sm">
+              <Card
+                className={
+                  isLight
+                    ? "space-y-4 border-neutral-200 bg-white p-6 text-neutral-950 shadow-sm"
+                    : "space-y-4 border-white/10 bg-white/[0.03] p-6 text-white"
+                }
+              >
+                <h3 className={isLight ? "text-neutral-950 font-body font-medium text-sm" : "text-white font-body font-medium text-sm"}>
                   Last Export Preview
                 </h3>
-                <pre className="bg-black/60 rounded-xl p-4 text-xs text-white/50 overflow-x-auto max-h-64 overflow-y-auto font-mono">
+                <pre className={isLight ? "bg-neutral-100 rounded-xl p-4 text-xs text-neutral-600 overflow-x-auto max-h-64 overflow-y-auto font-mono" : "bg-black/60 rounded-xl p-4 text-xs text-white/50 overflow-x-auto max-h-64 overflow-y-auto font-mono"}>
                   {JSON.stringify(manifest, null, 2)}
                 </pre>
-              </div>
+              </Card>
             )}
           </div>
         )}
@@ -745,8 +1027,10 @@ export default function AdminApp() {
           categories={categories}
           onSave={handleSaveLut}
           onClose={() => setEditModal(null)}
+          theme={theme}
         />
       )}
+    </div>
     </div>
   );
 }

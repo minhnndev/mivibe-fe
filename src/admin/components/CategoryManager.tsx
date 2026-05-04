@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { Plus, Edit2, Trash2, Save, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import type { Category, CategoryInput, Lut } from "../types";
 
 type CategoryManagerProps = {
@@ -7,6 +11,7 @@ type CategoryManagerProps = {
   luts: Lut[];
   onSave: (cat: CategoryInput) => void;
   onDelete: (id: string) => void;
+  theme?: "dark" | "light";
 };
 
 export default function CategoryManager({
@@ -14,6 +19,7 @@ export default function CategoryManager({
   luts,
   onSave,
   onDelete,
+  theme = "dark",
 }: CategoryManagerProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Category>>({});
@@ -60,100 +66,156 @@ export default function CategoryManager({
 
   const getLutCount = (catId: string) =>
     luts.filter((l) => l.category_id === catId).length;
+  const isLight = theme === "light";
+
+  const inputClassName = isLight
+    ? "border-neutral-200 bg-white text-neutral-950 placeholder:text-neutral-400 focus-visible:ring-neutral-300"
+    : "border-white/20 bg-white/5 text-white placeholder:text-white/20 focus-visible:ring-white/10";
 
   return (
     <div className="space-y-3">
       {categories.map((cat) => (
-        <div
+        <Card
           key={cat.id}
-          className="bg-white/5 border border-white/10 rounded-xl p-4"
+          className={
+            isLight
+              ? "border-neutral-200 bg-white p-4 text-neutral-950 shadow-sm"
+              : "border-white/10 bg-white/5 p-4 text-white"
+          }
         >
           {editingId === cat.id ? (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <input
+                <Input
                   value={form.name ?? ""}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, name: e.target.value }))
                   }
-                  className="bg-white/5 border border-white/20 rounded-lg px-3 py-1.5 text-white text-sm font-body focus:outline-none"
+                  className={inputClassName}
                   placeholder="Name"
                 />
-                <input
+                <Input
                   value={form.slug ?? ""}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, slug: e.target.value }))
                   }
-                  className="bg-white/5 border border-white/20 rounded-lg px-3 py-1.5 text-white text-sm font-body focus:outline-none"
+                  className={inputClassName}
                   placeholder="slug"
                 />
               </div>
-              <input
+              <Input
                 value={form.description ?? ""}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, description: e.target.value }))
                 }
-                className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-1.5 text-white text-sm font-body focus:outline-none"
+                className={inputClassName}
                 placeholder="Description"
               />
               <div className="flex gap-2">
-                <button
+                <Button
                   onClick={submitEdit}
-                  className="flex items-center gap-1.5 bg-white text-black rounded-lg px-3 py-1.5 text-xs font-body font-medium"
+                  size="sm"
+                  className={
+                    isLight
+                      ? "bg-neutral-950 text-white hover:bg-neutral-800"
+                      : "bg-white text-black hover:bg-white/90"
+                  }
                 >
                   <Save size={12} /> Save
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={cancelEdit}
-                  className="flex items-center gap-1.5 text-white/40 hover:text-white text-xs font-body transition-colors px-2"
+                  variant="ghost"
+                  size="sm"
+                  className={
+                    isLight
+                      ? "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950"
+                      : "text-white/40 hover:bg-white/5 hover:text-white"
+                  }
                 >
                   <X size={12} /> Cancel
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-white font-body font-medium text-sm">
+                  <span
+                    className={`font-body font-medium text-sm ${
+                      isLight ? "text-neutral-950" : "text-white"
+                    }`}
+                  >
                     {cat.name}
                   </span>
-                  <span className="text-white/30 text-xs font-body">
+                  <span
+                    className={`text-xs font-body ${
+                      isLight ? "text-neutral-400" : "text-white/30"
+                    }`}
+                  >
                     /{cat.slug}
                   </span>
-                  <span className="text-xs bg-white/10 text-white/50 rounded-full px-2 py-0.5 font-body">
+                  <Badge
+                    className={
+                      isLight
+                        ? "border-neutral-200 bg-neutral-100 text-neutral-500 hover:bg-neutral-100"
+                        : "border-white/10 bg-white/10 text-white/50 hover:bg-white/10"
+                    }
+                  >
                     {getLutCount(cat.id)} LUTs
-                  </span>
+                  </Badge>
                 </div>
                 {cat.description ? (
-                  <p className="text-white/40 text-xs font-body mt-0.5">
+                  <p
+                    className={`text-xs font-body mt-0.5 ${
+                      isLight ? "text-neutral-500" : "text-white/40"
+                    }`}
+                  >
                     {cat.description}
                   </p>
                 ) : null}
               </div>
               <div className="flex gap-2">
-                <button
+                <Button
                   onClick={() => startEdit(cat)}
-                  className="text-white/30 hover:text-white transition-colors p-1.5"
+                  variant="ghost"
+                  size="icon-sm"
+                  className={
+                    isLight
+                      ? "text-neutral-400 hover:bg-neutral-100 hover:text-neutral-950"
+                      : "text-white/30 hover:bg-white/5 hover:text-white"
+                  }
                 >
                   <Edit2 size={14} />
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => onDelete(cat.id)}
-                  className="text-white/30 hover:text-red-400 transition-colors p-1.5"
+                  variant="ghost"
+                  size="icon-sm"
+                  className={
+                    isLight
+                      ? "text-neutral-400 hover:bg-red-50 hover:text-red-500"
+                      : "text-white/30 hover:bg-red-500/10 hover:text-red-400"
+                  }
                 >
                   <Trash2 size={14} />
-                </button>
+                </Button>
               </div>
             </div>
           )}
-        </div>
+        </Card>
       ))}
 
       {showNew ? (
-        <div className="bg-white/5 border border-white/20 border-dashed rounded-xl p-4 space-y-3">
+        <Card
+          className={
+            isLight
+              ? "space-y-3 border-neutral-300 border-dashed bg-white p-4 text-neutral-950 shadow-sm"
+              : "space-y-3 border-white/20 border-dashed bg-white/5 p-4 text-white"
+          }
+        >
           <div className="grid grid-cols-2 gap-3">
-            <input
+            <Input
               autoFocus
               value={newForm.name}
               onChange={(e) =>
@@ -163,48 +225,64 @@ export default function CategoryManager({
                   slug: e.target.value.toLowerCase().replace(/\s+/g, "-"),
                 }))
               }
-              className="bg-white/5 border border-white/20 rounded-lg px-3 py-1.5 text-white text-sm font-body focus:outline-none"
+              className={inputClassName}
               placeholder="Category name *"
             />
-            <input
+            <Input
               value={newForm.slug}
               onChange={(e) =>
                 setNewForm((f) => ({ ...f, slug: e.target.value }))
               }
-              className="bg-white/5 border border-white/20 rounded-lg px-3 py-1.5 text-white text-sm font-body focus:outline-none"
+              className={inputClassName}
               placeholder="slug"
             />
           </div>
-          <input
+          <Input
             value={newForm.description ?? ""}
             onChange={(e) =>
               setNewForm((f) => ({ ...f, description: e.target.value }))
             }
-            className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-1.5 text-white text-sm font-body focus:outline-none"
+            className={inputClassName}
             placeholder="Description (optional)"
           />
           <div className="flex gap-2">
-            <button
+            <Button
               onClick={submitNew}
-              className="flex items-center gap-1.5 bg-white text-black rounded-lg px-3 py-1.5 text-xs font-body font-medium"
+              size="sm"
+              className={
+                isLight
+                  ? "bg-neutral-950 text-white hover:bg-neutral-800"
+                  : "bg-white text-black hover:bg-white/90"
+              }
             >
               <Save size={12} /> Create
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setShowNew(false)}
-              className="text-white/40 hover:text-white text-xs font-body transition-colors px-2"
+              variant="ghost"
+              size="sm"
+              className={
+                isLight
+                  ? "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950"
+                  : "text-white/40 hover:bg-white/5 hover:text-white"
+              }
             >
               Cancel
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       ) : (
-        <button
+        <Button
           onClick={() => setShowNew(true)}
-          className="w-full flex items-center justify-center gap-2 border border-white/10 border-dashed rounded-xl py-3 text-white/40 hover:text-white hover:border-white/30 transition-colors text-sm font-body"
+          variant="outline"
+          className={
+            isLight
+              ? "h-12 w-full border-neutral-300 border-dashed bg-white text-neutral-500 hover:border-neutral-400 hover:bg-neutral-50 hover:text-neutral-950"
+              : "h-12 w-full border-white/10 border-dashed bg-transparent text-white/40 hover:border-white/30 hover:bg-white/5 hover:text-white"
+          }
         >
           <Plus size={16} /> Add Category
-        </button>
+        </Button>
       )}
     </div>
   );
