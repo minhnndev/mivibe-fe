@@ -8,6 +8,7 @@ on:
 env:
   APP_NAME: mivibe-frontend # Mivibe Landing Page + Web Admin
   ENVIRONMENT: Production
+  IMAGE_NAME: ghcr.io/minhnndev/mivibe-fe
 
 jobs:
   build-and-deploy:
@@ -33,17 +34,35 @@ jobs:
       - name: Set version
         run: echo "VERSION=v0.0.${{ github.run_number }}" >> $GITHUB_ENV
 
+      # ✅ Validate app before publishing image
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
       # 🏗️ Build image
       - name: Build image
         run: |
-          IMAGE=ghcr.io/${{ github.repository }}
-          docker build -t $IMAGE:${{ env.VERSION }} .
+          docker build \
+            -t ${{ env.IMAGE_NAME }}:${{ env.VERSION }} \
+            -t ${{ env.IMAGE_NAME }}:latest \
+            .
 
       # 🚀 Push image
       - name: Push image
         run: |
-          IMAGE=ghcr.io/${{ github.repository }}
-          docker push $IMAGE:${{ env.VERSION }}
+          docker push ${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+          docker push ${{ env.IMAGE_NAME }}:latest
 
       # 📥 Checkout infra repo
       - name: Checkout infrastructure repo
@@ -57,8 +76,9 @@ jobs:
       # ✏️ Update deployment.yaml
       - name: Update image tag
         run: |
+          IMAGE_TAG="${{ env.IMAGE_NAME }}:$VERSION"
           sed -i \
-            's|image: *"ghcr.io/minhnndev/mivibe-fe:[^"]*"|image: "ghcr.io/minhnndev/mivibe-fe:'"$VERSION"'"|' \
+            "s|image: .*ghcr.io/minhnndev/mivibe-fe:[^[:space:]]*|image: \"$IMAGE_TAG\"|" \
             infra/manifests/mivibe-fe/deployment.yaml
 
       # 📤 Commit & push

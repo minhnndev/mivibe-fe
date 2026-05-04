@@ -5,6 +5,7 @@ import { supabase, isConfigured } from "./supabase";
 import type { Category, CategoryInput, Lut, LutInput, Manifest } from "./types";
 
 export const LUTS_BASE_URL =
+  window.__MIVIBE_ENV__?.VITE_LUTS_BASE_URL ||
   import.meta.env.VITE_LUTS_BASE_URL || "https://cdn.mivibe.app/luts";
 
 function slugify(value: string): string {

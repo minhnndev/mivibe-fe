@@ -3,7 +3,7 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --force
+RUN npm ci
 
 COPY . .
 RUN npm run build
@@ -14,12 +14,10 @@ FROM nginx:stable-alpine
 # Copy build output
 WORKDIR /usr/share/nginx/html
 COPY --from=build /app/dist ./
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy template để runtime env inject
-RUN cp index.html index.html.template
-
-# Install envsubst (thuộc gói gettext)
+# Install envsubst for runtime config injection
 RUN apk add --no-cache gettext
 
-# Inject env vars at runtime
-ENTRYPOINT ["/bin/sh", "-c", "envsubst < index.html.template > index.html && exec nginx -g 'daemon off;'"]
+# Inject public runtime env vars, then start Nginx
+ENTRYPOINT ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/env.template.js > /usr/share/nginx/html/env.js && exec nginx -g 'daemon off;'"]
