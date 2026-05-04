@@ -360,7 +360,7 @@ function resolveLutUrl(input: string) {
   // nếu đã là absolute URL thì giữ nguyên
   if (input.startsWith("http")) return input;
 
-  return `${LUTS_BASE_URL}/${input}`;
+  return `${LUTS_BASE_URL}/luts/${input}`;
 }
 // Load a .cube file from a URL and parse it
 export async function loadLutFromUrl(input: string): Promise<CubeLut> {

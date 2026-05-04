@@ -6,7 +6,7 @@ import type { Category, CategoryInput, Lut, LutInput, Manifest } from "./types";
 
 export const LUTS_BASE_URL =
   window.__MIVIBE_ENV__?.VITE_LUTS_BASE_URL ||
-  import.meta.env.VITE_LUTS_BASE_URL || "https://cdn.mivibe.app/luts";
+  import.meta.env.VITE_LUTS_BASE_URL;
 
 function slugify(value: string): string {
   return value
@@ -17,7 +17,8 @@ function slugify(value: string): string {
 }
 
 export function getLutUrl(storageKey: string): string {
-  return `${LUTS_BASE_URL.replace(/\/$/, "")}/${storageKey.replace(/^\//, "")}`;
+  const fullUrl = LUTS_BASE_URL + "/luts/";
+  return `${fullUrl.replace(/\/$/, "")}/${storageKey.replace(/^\//, "")}`;
 }
 
 // ─── Mock seed data ────────────────────────────────────────────────────────────
