@@ -94,5 +94,5 @@ jobs:
           fi
 
           git add manifests/mivibe-fe/deployment.yaml
-          git commit -m "chore(frontend): deploy $VERSION"
+          git commit -m "Mivibe - Web: 🚀 $VERSION"
           git push
