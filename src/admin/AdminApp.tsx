@@ -21,6 +21,9 @@ import {
   saveCategory,
   deleteCategory,
   generateManifest,
+  getRemoteConfig,
+  resetRemoteConfigFromLuts,
+  saveRemoteConfig,
 } from "./store";
 import LutPreviewCard from "./components/LutPreviewCard";
 import LutEditModal from "./components/LutEditModal";
@@ -29,6 +32,7 @@ import AdminSidebar from "./components/AdminSidebar";
 import AdminToast from "./components/AdminToast";
 import LutToolbar from "./components/LutToolbar";
 import PreviewImageSelector from "./components/PreviewImageSelector";
+import RemoteConfigManager from "./components/RemoteConfigManager";
 import { API_ENDPOINTS, DEFAULT_IMAGES } from "./constants";
 import { isConfigured } from "./supabase";
 import type {
@@ -40,6 +44,7 @@ import type {
   Lut,
   LutInput,
   Manifest,
+  RemoteConfig,
   Toast,
   ViewMode,
 } from "./types";
@@ -59,6 +64,7 @@ export default function AdminApp() {
   const [previewImage, setPreviewImage] = useState(DEFAULT_IMAGES[0]!.url);
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [manifest, setManifest] = useState<Manifest | null>(null);
+  const [remoteConfig, setRemoteConfig] = useState<RemoteConfig | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
   const [theme, setTheme] = useState<AdminTheme>("dark");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -70,9 +76,14 @@ export default function AdminApp() {
 
   const reload = useCallback(async () => {
     setLoading(true);
-    const [l, c] = await Promise.all([getLuts(), getCategories()]);
+    const [l, c, r] = await Promise.all([
+      getLuts(),
+      getCategories(),
+      getRemoteConfig(),
+    ]);
     setLuts(l);
     setCategories(c);
+    setRemoteConfig(r);
     setLoading(false);
   }, []);
 
@@ -122,6 +133,27 @@ export default function AdminApp() {
     setManifest(data);
     downloadJson(`luts-manifest-${Date.now()}.json`, data);
     showToast("Manifest exported!");
+  };
+
+  const handleSaveRemoteConfig = async (config: RemoteConfig) => {
+    const updated = await saveRemoteConfig(config);
+    setRemoteConfig(updated);
+    showToast("Remote config saved");
+  };
+
+  const handleExportRemoteConfig = (config: RemoteConfig) => {
+    downloadJson(`remote-config-${Date.now()}.json`, {
+      ...config,
+      updatedAt: new Date().toISOString(),
+    });
+    showToast("Remote config exported");
+  };
+
+  const handleResetRemoteConfig = async () => {
+    if (!confirm("Regenerate remote config from current LUTs? Existing package edits will be replaced.")) return;
+    const updated = await resetRemoteConfigFromLuts();
+    setRemoteConfig(updated);
+    showToast("Remote config regrouped from LUTs");
   };
 
   const handleCustomImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -500,6 +532,23 @@ export default function AdminApp() {
               theme={theme}
             />
           </div>
+        )}
+
+        {/* ── Remote Config ───────────────────────────────────── */}
+        {activeTab === "remote-config" && (
+          loading || !remoteConfig ? (
+            <div className={isLight ? "flex h-screen items-center justify-center bg-neutral-100 text-neutral-400" : "flex h-screen items-center justify-center bg-[#0a0a0a] text-white/30"}>
+              Loading remote config...
+            </div>
+          ) : (
+            <RemoteConfigManager
+              config={remoteConfig}
+              theme={theme}
+              onSave={(config) => void handleSaveRemoteConfig(config)}
+              onExport={handleExportRemoteConfig}
+              onResetFromLuts={() => void handleResetRemoteConfig()}
+            />
+          )
         )}
 
         {/* ── Export & API ─────────────────────────────────────── */}

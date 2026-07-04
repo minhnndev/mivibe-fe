@@ -2,11 +2,30 @@
 // Uses localStorage as local state, syncs to Supabase when configured
 
 import { supabase, isConfigured } from "./supabase";
-import type { Category, CategoryInput, Lut, LutInput, Manifest } from "./types";
+import {
+  createRemoteConfigFromLuts,
+  normalizeRemoteConfig,
+} from "./remoteConfigUtils";
+import type {
+  Category,
+  CategoryInput,
+  Lut,
+  LutInput,
+  Manifest,
+  RemoteConfig,
+} from "./types";
 
 export const LUTS_BASE_URL =
   window.__MIVIBE_ENV__?.VITE_LUTS_BASE_URL ||
   import.meta.env.VITE_LUTS_BASE_URL;
+
+const REMOTE_CONFIG_ID = "mivibe_lut_remote_config";
+
+type RemoteConfigRow = {
+  id: string;
+  config: RemoteConfig;
+  updated_at?: string;
+};
 
 function slugify(value: string): string {
   return value
@@ -322,6 +341,58 @@ export async function deleteLut(id: string): Promise<Lut[]> {
   saveLocal("luts", updated);
   if (isConfigured) await supabase.from("luts").delete().eq("id", id);
   return updated;
+}
+
+// ─── Remote Config ────────────────────────────────────────────────────────────
+export async function getRemoteConfig(): Promise<RemoteConfig> {
+  const luts = await getLuts();
+  const categories = await getCategories();
+  const fallback = createRemoteConfigFromLuts(luts, categories);
+  const localConfig = loadLocal("remote_config", fallback);
+
+  if (isConfigured) {
+    const { data, error } = await supabase
+      .from("remote_configs")
+      .select("id, config, updated_at")
+      .eq("id", REMOTE_CONFIG_ID)
+      .maybeSingle();
+
+    if (!error && data) {
+      const row = data as RemoteConfigRow;
+      const remoteConfig = normalizeRemoteConfig(row.config);
+      saveLocal("remote_config", remoteConfig);
+      return remoteConfig;
+    }
+
+    if (error) console.warn("Remote config Supabase fetch failed:", error);
+  }
+
+  return normalizeRemoteConfig(localConfig);
+}
+
+export async function saveRemoteConfig(config: RemoteConfig): Promise<RemoteConfig> {
+  const updated = normalizeRemoteConfig({
+    ...config,
+    updatedAt: new Date().toISOString(),
+  });
+  saveLocal("remote_config", updated);
+
+  if (isConfigured) {
+    const { error } = await supabase.from("remote_configs").upsert({
+      id: REMOTE_CONFIG_ID,
+      config: updated,
+      updated_at: updated.updatedAt,
+    });
+    if (error) console.warn("Remote config Supabase sync failed:", error);
+  }
+
+  return updated;
+}
+
+export async function resetRemoteConfigFromLuts(): Promise<RemoteConfig> {
+  const [luts, categories] = await Promise.all([getLuts(), getCategories()]);
+  const config = createRemoteConfigFromLuts(luts, categories);
+  return saveRemoteConfig(config);
 }
 
 // ─── Mobile Manifest Export ───────────────────────────────────────────────────

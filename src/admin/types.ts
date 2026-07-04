@@ -62,9 +62,54 @@ export type Manifest = {
   }>;
 };
 
+export type RemoteCategory = {
+  id: string;
+  name: string;
+  description: string;
+  coverImage: string;
+  order: number;
+  isActive: boolean;
+  packageIds: string[];
+};
+
+export type LutPackage = {
+  id: string;
+  name: string;
+  description: string;
+  coverImage: string;
+  styleTag: string;
+  order: number;
+  isActive: boolean;
+  lutIds: string[];
+};
+
+export type RemoteLut = {
+  id: string;
+  name: string;
+  fileName: string;
+  previewImage: string;
+  toneTag: string;
+  styleTag: string;
+  isActive: boolean;
+  currentPackageId: string | null;
+};
+
+export type RemoteConfig = {
+  version: string;
+  updatedAt: string;
+  categories: RemoteCategory[];
+  packages: LutPackage[];
+  luts: RemoteLut[];
+};
+
+export type RemoteConfigSelection =
+  | { type: "root"; id: "root" }
+  | { type: "category"; id: string }
+  | { type: "package"; id: string };
+
 export type ViewMode = "grid" | "list";
 
-export type ActiveTab = "luts" | "categories" | "export";
+export type ActiveTab = "luts" | "categories" | "remote-config" | "export";
 
 export type FilterStatus = "all" | "active" | "inactive" | "free";
 

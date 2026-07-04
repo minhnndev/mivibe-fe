@@ -1,4 +1,4 @@
-import { Download, Layers, Tag } from "lucide-react";
+import { Download, GitBranch, Layers, Tag } from "lucide-react";
 import type { ActiveTab, ApiEndpoint, PreviewImage } from "./types";
 
 export const DEFAULT_IMAGES: PreviewImage[] = [
@@ -23,6 +23,7 @@ export const DEFAULT_IMAGES: PreviewImage[] = [
 export const NAV_ITEMS = [
   { id: "luts", icon: Layers, label: "LUT Library" },
   { id: "categories", icon: Tag, label: "Categories" },
+  { id: "remote-config", icon: GitBranch, label: "Remote Config" },
   { id: "export", icon: Download, label: "Export & API" },
 ] satisfies Array<{
   id: ActiveTab;
@@ -45,5 +46,10 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     method: "GET",
     path: "/rest/v1/luts?select=*,categories(*)&category_id=eq.{id}",
     desc: "Fetch LUTs by category",
+  },
+  {
+    method: "GET",
+    path: "/rest/v1/remote_configs?id=eq.mivibe_lut_remote_config&select=config,updated_at",
+    desc: "Fetch mobile remote config tree",
   },
 ];
