@@ -1,12 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  applyNodeChanges,
   Background,
+  BackgroundVariant,
   Controls,
   Handle,
   Position,
   ReactFlow,
   type Edge,
   type Node,
+  type NodeChange,
   type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -44,39 +47,66 @@ type TreeNodeData = {
   isLight: boolean;
 };
 
+type NodePositions = Record<string, { x: number; y: number }>;
+
 function TreeNode({ data }: NodeProps<Node<TreeNodeData>>) {
   const toneClass =
     data.tone === "root"
       ? data.isLight
-        ? "border-purple-200 bg-purple-50"
-        : "border-purple-400/50 bg-purple-500/15"
+        ? "border-purple-200 bg-white/95 shadow-purple-100/80"
+        : "border-purple-400/50 bg-[#1c1430]/95 shadow-purple-950/25"
       : data.tone === "category"
         ? data.isLight
-          ? "border-sky-200 bg-sky-50"
-          : "border-sky-400/50 bg-sky-500/15"
+          ? "border-sky-200 bg-white/95 shadow-sky-100/80"
+          : "border-sky-400/50 bg-[#0f1f2d]/95 shadow-sky-950/25"
         : data.isLight
-          ? "border-emerald-200 bg-emerald-50"
-          : "border-emerald-400/50 bg-emerald-500/15";
+          ? "border-emerald-200 bg-white/95 shadow-emerald-100/80"
+          : "border-emerald-400/50 bg-[#10251d]/95 shadow-emerald-950/25";
+  const iconClassName =
+    data.tone === "root"
+      ? data.isLight
+        ? "bg-purple-100 text-purple-700"
+        : "bg-purple-400/15 text-purple-200"
+      : data.tone === "category"
+        ? data.isLight
+          ? "bg-sky-100 text-sky-700"
+          : "bg-sky-400/15 text-sky-200"
+        : data.isLight
+          ? "bg-emerald-100 text-emerald-700"
+          : "bg-emerald-400/15 text-emerald-200";
   const titleClassName = data.isLight ? "text-neutral-950" : "text-white";
   const subtitleClassName = data.isLight ? "text-neutral-600" : "text-white/65";
-  const statusClassName = data.isLight ? "text-neutral-500" : "text-white/45";
+  const statusClassName = data.status === "Active"
+    ? data.isLight
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : "border-emerald-400/25 bg-emerald-400/10 text-emerald-200"
+    : data.isLight
+      ? "border-neutral-200 bg-neutral-100 text-neutral-500"
+      : "border-white/10 bg-white/5 text-white/45";
   const selectedClassName = data.isLight ? "ring-2 ring-neutral-950/40" : "ring-2 ring-white/70";
 
   return (
     <div
-      className={`min-w-44 rounded-2xl border px-4 py-3 shadow-xl backdrop-blur ${toneClass} ${
+      className={`w-[280px] rounded-[1.35rem] border px-5 py-4 shadow-2xl backdrop-blur-xl transition-transform hover:-translate-y-0.5 ${toneClass} ${
         data.selected ? selectedClassName : ""
       }`}
     >
-      <Handle type="target" position={Position.Left} className="opacity-0" />
-      <div className={`text-sm font-semibold ${titleClassName}`}>{data.title}</div>
-      <div className={`mt-1 text-xs ${subtitleClassName}`}>{data.subtitle}</div>
+      <Handle type="target" position={Position.Left} className="!h-3 !w-3 !border-2 opacity-50" />
+      <div className="flex items-start gap-3">
+        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-lg font-bold ${iconClassName}`}>
+          {data.title.slice(0, 1).toUpperCase()}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className={`truncate text-base font-semibold leading-tight ${titleClassName}`} title={data.title}>{data.title}</div>
+          <div className={`mt-1 truncate text-sm ${subtitleClassName}`} title={data.subtitle}>{data.subtitle}</div>
+        </div>
+      </div>
       {data.status ? (
-        <div className={`mt-2 text-[10px] uppercase tracking-widest ${statusClassName}`}>
+        <div className={`mt-4 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest ${statusClassName}`}>
           {data.status}
         </div>
       ) : null}
-      <Handle type="source" position={Position.Right} className="opacity-0" />
+      <Handle type="source" position={Position.Right} className="!h-3 !w-3 !border-2 opacity-50" />
     </div>
   );
 }
@@ -100,6 +130,7 @@ export default function RemoteConfigManager({
   const [lutStyleFilter, setLutStyleFilter] = useState("all");
   const [lutStatusFilter, setLutStatusFilter] = useState("all");
   const [page, setPage] = useState(0);
+  const [nodePositions, setNodePositions] = useState<NodePositions>({});
   const isLight = theme === "light";
   const errors = validateRemoteConfig(draft);
 
@@ -125,10 +156,34 @@ export default function RemoteConfigManager({
     ? "border-neutral-200 bg-neutral-100 text-neutral-600 hover:bg-neutral-100"
     : "border-white/10 bg-white/10 text-white/60 hover:bg-white/10";
 
-  const { nodes, edges } = useMemo(
-    () => buildFlow(draft, selection, isLight),
-    [draft, isLight, selection],
+  const { nodes: arrangedNodes, edges } = useMemo(
+    () => buildFlow(draft, selection, isLight, nodePositions),
+    [draft, isLight, nodePositions, selection],
   );
+  const [flowNodes, setFlowNodes] = useState<Node<TreeNodeData>[]>(arrangedNodes);
+
+  useEffect(() => {
+    setFlowNodes(arrangedNodes);
+  }, [arrangedNodes]);
+
+  const handleNodesChange = (changes: NodeChange<Node<TreeNodeData>>[]) => {
+    setFlowNodes((current) => applyNodeChanges(changes, current));
+  };
+
+  const handleNodeDragStop = (_: MouseEvent | TouchEvent, node: Node<TreeNodeData>) => {
+    setNodePositions((current) => {
+      const currentPosition = current[node.id];
+      if (
+        currentPosition &&
+        currentPosition.x === node.position.x &&
+        currentPosition.y === node.position.y
+      ) {
+        return current;
+      }
+
+      return { ...current, [node.id]: node.position };
+    });
+  };
 
   const packageCategoryId = selectedPackage
     ? draft.categories.find((category) =>
@@ -383,17 +438,40 @@ export default function RemoteConfigManager({
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <div className={isLight ? "flex-1 bg-neutral-100" : "flex-1 bg-[#090909]"}>
+      <div className={isLight ? "relative flex-1 bg-neutral-100" : "relative flex-1 bg-[#090909]"}>
+        <div className="pointer-events-none absolute left-4 top-4 z-10 flex items-center gap-2">
+          <div className={isLight ? "rounded-full border border-neutral-200 bg-white/90 px-3 py-1.5 text-xs text-neutral-500 shadow-sm backdrop-blur" : "rounded-full border border-white/10 bg-black/45 px-3 py-1.5 text-xs text-white/45 shadow-sm backdrop-blur"}>
+            Drag nodes to arrange freely
+          </div>
+          {Object.keys(nodePositions).length > 0 ? (
+            <Button
+              className="pointer-events-auto h-8 rounded-full"
+              size="sm"
+              variant="outline"
+              onClick={() => setNodePositions({})}
+            >
+              <RefreshCcw size={13} /> Auto arrange
+            </Button>
+          ) : null}
+        </div>
         <ReactFlow
-          nodes={nodes}
+          nodes={flowNodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          onNodesChange={handleNodesChange}
+          onNodeDragStop={handleNodeDragStop}
+          nodesDraggable
+          elementsSelectable
+          nodeDragThreshold={8}
           className={
             isLight
-              ? "[&_.react-flow__attribution]:bg-white/80 [&_.react-flow__attribution]:text-neutral-500 [&_.react-flow__controls-button]:border-neutral-200 [&_.react-flow__controls-button]:bg-white [&_.react-flow__controls-button]:text-neutral-700 [&_.react-flow__controls-button:hover]:bg-neutral-100"
-              : "[&_.react-flow__attribution]:bg-black/70 [&_.react-flow__attribution]:text-white/40 [&_.react-flow__controls-button]:border-white/10 [&_.react-flow__controls-button]:bg-[#171717] [&_.react-flow__controls-button]:text-white/70 [&_.react-flow__controls-button:hover]:bg-[#222]"
+              ? "[&_.react-flow__attribution]:bg-white/80 [&_.react-flow__attribution]:text-neutral-500 [&_.react-flow__controls-button]:border-neutral-200 [&_.react-flow__controls-button]:bg-white [&_.react-flow__controls-button]:text-neutral-700 [&_.react-flow__controls-button:hover]:bg-neutral-100 [&_.react-flow__pane]:cursor-grab [&_.react-flow__pane:active]:cursor-grabbing"
+              : "[&_.react-flow__attribution]:bg-black/70 [&_.react-flow__attribution]:text-white/40 [&_.react-flow__controls-button]:border-white/10 [&_.react-flow__controls-button]:bg-[#171717] [&_.react-flow__controls-button]:text-white/70 [&_.react-flow__controls-button:hover]:bg-[#222] [&_.react-flow__pane]:cursor-grab [&_.react-flow__pane:active]:cursor-grabbing"
           }
           fitView
+          fitViewOptions={{ padding: 0.18 }}
+          minZoom={0.35}
+          maxZoom={1.35}
           onNodeClick={(_, node) => {
             if (node.id === "root") setSelection({ type: "root", id: "root" });
             else if (node.id.startsWith("category:")) {
@@ -403,7 +481,12 @@ export default function RemoteConfigManager({
             }
           }}
         >
-          <Background color={isLight ? "#d4d4d4" : "#333"} gap={22} />
+          <Background
+            variant={BackgroundVariant.Dots}
+            color={isLight ? "#c7c7c7" : "#343434"}
+            gap={24}
+            size={2}
+          />
           <Controls />
         </ReactFlow>
       </div>
@@ -552,31 +635,63 @@ export default function RemoteConfigManager({
   );
 }
 
-function buildFlow(config: RemoteConfig, selection: RemoteConfigSelection, isLight: boolean) {
-  const nodes: Node<TreeNodeData>[] = [
-    {
-      id: "root",
-      type: "treeNode",
-      position: { x: 0, y: 0 },
-      data: {
-        title: "Remote Config",
-        subtitle: `${config.categories.length} categories`,
-        selected: selection.type === "root",
-        tone: "root",
-        isLight,
-      },
-    },
-  ];
+function buildFlow(
+  config: RemoteConfig,
+  selection: RemoteConfigSelection,
+  isLight: boolean,
+  nodePositions: NodePositions,
+) {
+  const nodes: Node<TreeNodeData>[] = [];
   const edges: Edge[] = [];
   const sortedCategories = [...config.categories].sort((a, b) => a.order - b.order);
-  let y = 0;
+  const selectedPackageId = selection.type === "package" ? selection.id : "";
+  const selectedCategoryId =
+    selection.type === "category"
+      ? selection.id
+      : sortedCategories.find((category) => category.packageIds.includes(selectedPackageId))?.id ?? "";
+  const hasTreeSelection = Boolean(selectedCategoryId);
+  const baseEdgeColor = isLight ? "#64748b" : "#94a3b8";
+  const activeEdgeColor = isLight ? "#f97316" : "#fb923c";
+  const columnCount = sortedCategories.length > 4 ? 2 : 1;
+  const columnHeights = Array.from({ length: columnCount }, (_, index) => index * 90);
+  const clusterGapX = 700;
+  const clusterGapY = 210;
+  const packageOffsetX = 300;
+  const packageGapX = 300;
+  const packageGapY = 165;
+
+  const withCustomPosition = (id: string, position: { x: number; y: number }) =>
+    nodePositions[id] ?? position;
+
+  const getEdgeStyle = (highlighted: boolean, active: boolean) => ({
+    stroke: highlighted ? activeEdgeColor : baseEdgeColor,
+    strokeWidth: highlighted ? 4.75 : active ? 2.45 : 1.85,
+    opacity: highlighted ? 1 : hasTreeSelection ? 0.42 : 0.78,
+    filter: highlighted ? `drop-shadow(0 0 5px ${activeEdgeColor})` : undefined,
+  });
 
   sortedCategories.forEach((category) => {
-    const categoryY = y;
+    const packages = category.packageIds
+      .map((id) => config.packages.find((pkg) => pkg.id === id))
+      .filter((pkg): pkg is LutPackage => Boolean(pkg))
+      .sort((a, b) => a.order - b.order);
+    const columnIndex = columnHeights.reduce(
+      (bestIndex, height, index) => (height < (columnHeights[bestIndex] ?? 0) ? index : bestIndex),
+      0,
+    );
+    const clusterTop = columnHeights[columnIndex] ?? 0;
+    const categoryX = 360 + columnIndex * clusterGapX;
+    const packageColumns = packages.length > 4 ? 2 : 1;
+    const packageRows = Math.max(1, Math.ceil(packages.length / packageColumns));
+    const clusterHeight = Math.max(220, packageRows * packageGapY);
+    const categoryY = clusterTop + Math.max(0, (clusterHeight - 120) / 2);
+    const categoryEdgeHighlighted = selectedCategoryId === category.id;
+    const categoryNodeId = `category:${category.id}`;
+
     nodes.push({
-      id: `category:${category.id}`,
+      id: categoryNodeId,
       type: "treeNode",
-      position: { x: 320, y: categoryY },
+      position: withCustomPosition(categoryNodeId, { x: categoryX, y: categoryY }),
       data: {
         title: category.name,
         subtitle: `${category.packageIds.length} packages`,
@@ -586,17 +701,29 @@ function buildFlow(config: RemoteConfig, selection: RemoteConfigSelection, isLig
         isLight,
       },
     });
-    edges.push({ id: `root-${category.id}`, source: "root", target: `category:${category.id}`, animated: category.isActive });
+    edges.push({
+      id: `root-${category.id}`,
+      source: "root",
+      target: categoryNodeId,
+      type: "simplebezier",
+      animated: categoryEdgeHighlighted,
+      style: getEdgeStyle(categoryEdgeHighlighted, category.isActive),
+      zIndex: categoryEdgeHighlighted ? 10 : 0,
+    });
 
-    const packages = category.packageIds
-      .map((id) => config.packages.find((pkg) => pkg.id === id))
-      .filter((pkg): pkg is LutPackage => Boolean(pkg))
-      .sort((a, b) => a.order - b.order);
     packages.forEach((pkg, index) => {
+      const packageColumn = index % packageColumns;
+      const packageRow = Math.floor(index / packageColumns);
+      const packageX = categoryX + packageOffsetX + packageColumn * packageGapX;
+      const packageY = clusterTop + packageRow * packageGapY + (packageColumn % 2) * 58;
+      const packageEdgeHighlighted =
+        selection.type === "category" ? selection.id === category.id : selectedPackageId === pkg.id;
+      const packageNodeId = `package:${pkg.id}`;
+
       nodes.push({
-        id: `package:${pkg.id}`,
+        id: packageNodeId,
         type: "treeNode",
-        position: { x: 660, y: categoryY + index * 120 },
+        position: withCustomPosition(packageNodeId, { x: packageX, y: packageY }),
         data: {
           title: pkg.name,
           subtitle: `${pkg.lutIds.length} LUTs`,
@@ -606,10 +733,31 @@ function buildFlow(config: RemoteConfig, selection: RemoteConfigSelection, isLig
           isLight,
         },
       });
-      edges.push({ id: `${category.id}-${pkg.id}`, source: `category:${category.id}`, target: `package:${pkg.id}`, animated: pkg.isActive });
+      edges.push({
+        id: `${category.id}-${pkg.id}`,
+        source: categoryNodeId,
+        target: packageNodeId,
+        type: "simplebezier",
+        animated: packageEdgeHighlighted,
+        style: getEdgeStyle(packageEdgeHighlighted, pkg.isActive),
+        zIndex: packageEdgeHighlighted ? 10 : 0,
+      });
     });
 
-    y += Math.max(1, packages.length) * 120 + 70;
+    columnHeights[columnIndex] = clusterTop + clusterHeight + clusterGapY;
+  });
+
+  nodes.unshift({
+    id: "root",
+    type: "treeNode",
+    position: withCustomPosition("root", { x: 0, y: Math.max(0, (Math.max(...columnHeights) - 430) / 2) }),
+    data: {
+      title: "Remote Config",
+      subtitle: `${config.categories.length} categories · ${config.packages.length} packages`,
+      selected: selection.type === "root",
+      tone: "root",
+      isLight,
+    },
   });
 
   return { nodes, edges };
