@@ -347,7 +347,7 @@ export async function deleteLut(id: string): Promise<Lut[]> {
 export async function getRemoteConfig(): Promise<RemoteConfig> {
   const luts = await getLuts();
   const categories = await getCategories();
-  const fallback = createRemoteConfigFromLuts(luts, categories);
+  const fallback = createRemoteConfigFromLuts(luts, categories, getLutUrl);
   const localConfig = loadLocal("remote_config", fallback);
 
   if (isConfigured) {
@@ -391,7 +391,7 @@ export async function saveRemoteConfig(config: RemoteConfig): Promise<RemoteConf
 
 export async function resetRemoteConfigFromLuts(): Promise<RemoteConfig> {
   const [luts, categories] = await Promise.all([getLuts(), getCategories()]);
-  const config = createRemoteConfigFromLuts(luts, categories);
+  const config = createRemoteConfigFromLuts(luts, categories, getLutUrl);
   return saveRemoteConfig(config);
 }
 

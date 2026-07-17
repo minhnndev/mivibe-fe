@@ -174,6 +174,7 @@ function chunkLuts(luts: RemoteLut[]) {
 export function createRemoteConfigFromLuts(
   luts: Lut[],
   categories: Category[],
+  resolveDownloadUrl: (storageKey: string) => string = () => "",
 ): RemoteConfig {
   const grouped = new Map<string, RemoteLut[]>();
 
@@ -184,11 +185,14 @@ export function createRemoteConfigFromLuts(
       id: lut.id,
       name: lut.name,
       fileName: lut.filename,
+      storageKey: lut.storage_key ?? lut.filename,
+      downloadUrl: lut.download_url ?? resolveDownloadUrl(lut.storage_key ?? lut.filename),
       previewImage: lut.preview_url ?? "",
       toneTag: inferToneTag(text, categoryId),
       styleTag: inferStyleTag(text, categoryId),
       isActive: lut.is_active,
       currentPackageId: null,
+      intensity: lut.intensity ?? 1,
     };
     grouped.set(categoryId, [...(grouped.get(categoryId) ?? []), remoteLut]);
   }
@@ -235,6 +239,8 @@ export function createRemoteConfigFromLuts(
         order: index + 1,
         isActive: true,
         lutIds: updatedChunk.map((lut) => lut.id),
+        version: "1.0.0",
+        sizeBytes: null,
       });
       category.packageIds.push(packageId);
       remoteLuts.push(...updatedChunk);
@@ -255,6 +261,8 @@ export function normalizeRemoteConfig(config: RemoteConfig): RemoteConfig {
   const normalizedPackages = config.packages.map((pkg) => ({
     ...pkg,
     lutIds: pkg.lutIds.filter((id) => config.luts.some((lut) => lut.id === id)),
+    version: pkg.version ?? "1.0.0",
+    sizeBytes: pkg.sizeBytes ?? null,
   }));
 
   return {
@@ -267,6 +275,11 @@ export function normalizeRemoteConfig(config: RemoteConfig): RemoteConfig {
     packages: normalizedPackages,
     luts: config.luts.map((lut) => ({
       ...lut,
+      storageKey: lut.storageKey ?? lut.fileName,
+      downloadUrl: lut.downloadUrl ?? "",
+      intensity: lut.intensity ?? 1,
+      sizeBytes: lut.sizeBytes ?? null,
+      checksum: lut.checksum ?? null,
       currentPackageId:
         lut.currentPackageId && packageIds.has(lut.currentPackageId)
           ? lut.currentPackageId

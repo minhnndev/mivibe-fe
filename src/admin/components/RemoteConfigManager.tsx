@@ -300,11 +300,14 @@ export default function RemoteConfigManager({
           id,
           name: "New LUT",
           fileName: "",
+          storageKey: "",
+          downloadUrl: "",
           previewImage: "",
           toneTag: "",
           styleTag: "",
           isActive: true,
           currentPackageId: packageId,
+          intensity: 1,
         },
       ],
       packages: current.packages.map((pkg) =>
@@ -606,7 +609,9 @@ export default function RemoteConfigManager({
                       <div className={isLight ? "h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-neutral-200" : "h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-white/10"}>{lut.previewImage ? <img src={lut.previewImage} alt="" className="h-full w-full object-cover" /> : null}</div>
                       <div className="min-w-0 flex-1 space-y-2">
                         <Input value={lut.name} onChange={(event) => setLut(lut.id, { name: event.target.value })} className={inputClassName} />
-                        <div className="grid grid-cols-2 gap-2"><Input value={lut.fileName} onChange={(event) => setLut(lut.id, { fileName: event.target.value })} className={inputClassName} placeholder="file.cube" /><Input value={lut.previewImage} onChange={(event) => setLut(lut.id, { previewImage: event.target.value })} className={inputClassName} placeholder="preview URL" /></div>
+                        <div className="grid grid-cols-2 gap-2"><Input value={lut.fileName} onChange={(event) => setLut(lut.id, { fileName: event.target.value })} className={inputClassName} placeholder="file.cube" /><Input value={lut.storageKey} onChange={(event) => setLut(lut.id, { storageKey: event.target.value })} className={inputClassName} placeholder="storage key" /></div>
+                        <Input value={lut.downloadUrl} onChange={(event) => setLut(lut.id, { downloadUrl: event.target.value })} className={inputClassName} placeholder="download URL" />
+                        <Input value={lut.previewImage} onChange={(event) => setLut(lut.id, { previewImage: event.target.value })} className={inputClassName} placeholder="preview URL" />
                         <div className="grid grid-cols-2 gap-2"><Input value={lut.toneTag} onChange={(event) => setLut(lut.id, { toneTag: event.target.value })} className={inputClassName} placeholder="tone" /><Input value={lut.styleTag} onChange={(event) => setLut(lut.id, { styleTag: event.target.value })} className={inputClassName} placeholder="style" /></div>
                       </div>
                     </div>

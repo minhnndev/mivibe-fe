@@ -81,17 +81,25 @@ export type LutPackage = {
   order: number;
   isActive: boolean;
   lutIds: string[];
+  version?: string;
+  sizeBytes?: number | null;
 };
 
 export type RemoteLut = {
   id: string;
   name: string;
   fileName: string;
+  storageKey: string;
+  downloadUrl: string;
   previewImage: string;
   toneTag: string;
   styleTag: string;
   isActive: boolean;
   currentPackageId: string | null;
+  intensity: number;
+  version?: string;
+  sizeBytes?: number | null;
+  checksum?: string | null;
 };
 
 export type RemoteConfig = {
