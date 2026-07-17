@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import App from './App'
-import AdminApp from './admin/AdminApp'
+import AdminPage from './admin/AdminPage'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import './index.css'
@@ -17,7 +17,7 @@ createRoot(root).render(
         <Route path="/" element={<App />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
-        <Route path="/admin/*" element={<AdminApp />} />
+        <Route path="/admin/*" element={<AdminPage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

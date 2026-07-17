@@ -375,17 +375,27 @@ export async function saveRemoteConfig(config: RemoteConfig): Promise<RemoteConf
     ...config,
     updatedAt: new Date().toISOString(),
   });
-  saveLocal("remote_config", updated);
 
   if (isConfigured) {
-    const { error } = await supabase.from("remote_configs").upsert({
-      id: REMOTE_CONFIG_ID,
-      config: updated,
-      updated_at: updated.updatedAt,
-    });
-    if (error) console.warn("Remote config Supabase sync failed:", error);
+    const { data, error } = await supabase
+      .from("remote_configs")
+      .upsert({
+        id: REMOTE_CONFIG_ID,
+        config: updated,
+        updated_at: updated.updatedAt,
+      })
+      .select("id, config, updated_at")
+      .single();
+
+    if (error) {
+      throw new Error(`Remote config publish failed: ${error.message}`);
+    }
+    if (!data) {
+      throw new Error("Remote config publish failed: no row returned");
+    }
   }
 
+  saveLocal("remote_config", updated);
   return updated;
 }
 

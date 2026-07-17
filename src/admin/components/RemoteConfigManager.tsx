@@ -134,6 +134,10 @@ export default function RemoteConfigManager({
   const isLight = theme === "light";
   const errors = validateRemoteConfig(draft);
 
+  useEffect(() => {
+    setDraft(config);
+  }, [config]);
+
   const selectedCategory =
     selection.type === "category"
       ? draft.categories.find((item) => item.id === selection.id)

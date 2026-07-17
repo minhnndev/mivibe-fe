@@ -50,7 +50,16 @@ import type {
 } from "./types";
 import { downloadJson, filterLuts, getCategoryName } from "./utils";
 
-export default function AdminApp() {
+function messageFromError(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+type AdminAppProps = {
+  userEmail: string;
+  onSignOut: () => void;
+};
+
+export default function AdminApp({ userEmail, onSignOut }: AdminAppProps) {
   const [luts, setLuts] = useState<Lut[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +75,7 @@ export default function AdminApp() {
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [remoteConfig, setRemoteConfig] = useState<RemoteConfig | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
-  const [theme, setTheme] = useState<AdminTheme>("dark");
+  const [theme, setTheme] = useState<AdminTheme>("light");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const showToast = (msg: string, type: Toast["type"] = "success") => {
@@ -136,9 +145,13 @@ export default function AdminApp() {
   };
 
   const handleSaveRemoteConfig = async (config: RemoteConfig) => {
-    const updated = await saveRemoteConfig(config);
-    setRemoteConfig(updated);
-    showToast("Remote config saved");
+    try {
+      const updated = await saveRemoteConfig(config);
+      setRemoteConfig(updated);
+      showToast("Remote config published");
+    } catch (error) {
+      showToast(messageFromError(error), "error");
+    }
   };
 
   const handleExportRemoteConfig = (config: RemoteConfig) => {
@@ -151,9 +164,13 @@ export default function AdminApp() {
 
   const handleResetRemoteConfig = async () => {
     if (!confirm("Regenerate remote config from current LUTs? Existing package edits will be replaced.")) return;
-    const updated = await resetRemoteConfigFromLuts();
-    setRemoteConfig(updated);
-    showToast("Remote config regrouped from LUTs");
+    try {
+      const updated = await resetRemoteConfigFromLuts();
+      setRemoteConfig(updated);
+      showToast("Remote config regrouped and published");
+    } catch (error) {
+      showToast(messageFromError(error), "error");
+    }
   };
 
   const handleCustomImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -184,8 +201,10 @@ export default function AdminApp() {
         categoryCount={categories.length}
         lutCount={luts.length}
         theme={theme}
+        userEmail={userEmail}
         onTabChange={setActiveTab}
         onThemeChange={setTheme}
+        onSignOut={onSignOut}
       />
 
       {/* Main Content */}

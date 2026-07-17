@@ -1,4 +1,4 @@
-import { Moon, Sun } from "lucide-react";
+import { LogOut, Moon, Sun } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -12,8 +12,10 @@ type AdminSidebarProps = {
   categoryCount: number;
   lutCount: number;
   theme: AdminTheme;
+  userEmail: string;
   onTabChange: (tab: ActiveTab) => void;
   onThemeChange: (theme: AdminTheme) => void;
+  onSignOut: () => void;
 };
 
 export default function AdminSidebar({
@@ -22,8 +24,10 @@ export default function AdminSidebar({
   categoryCount,
   lutCount,
   theme,
+  userEmail,
   onTabChange,
   onThemeChange,
+  onSignOut,
 }: AdminSidebarProps) {
   const isLight = theme === "light";
 
@@ -156,6 +160,23 @@ export default function AdminSidebar({
           <span className={isConfigured ? "text-emerald-400" : "text-orange-400"}>
             {isConfigured ? "Connected" : "Local only"}
           </span>
+        </div>
+        <div className={isLight ? "border-t border-neutral-200 pt-3" : "border-t border-white/5 pt-3"}>
+          <p className={isLight ? "truncate text-xs text-neutral-500" : "truncate text-xs text-white/35"} title={userEmail}>
+            {userEmail}
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onSignOut}
+            className={`mt-2 h-8 w-full justify-start gap-2 px-2 ${
+              isLight
+                ? "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950"
+                : "text-white/45 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            <LogOut size={14} /> Sign out
+          </Button>
         </div>
       </div>
     </div>
