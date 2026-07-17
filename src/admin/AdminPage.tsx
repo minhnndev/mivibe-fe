@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,6 +19,15 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { retry: 1, staleTime: 30_000 },
+          mutations: { retry: 0 },
+        },
+      }),
+  );
 
   useEffect(() => {
     let active = true;
@@ -62,7 +72,11 @@ export default function AdminPage() {
 
   const handleSignOut = async () => {
     const { error: signOutError } = await supabase.auth.signOut();
-    if (signOutError) setError(signOutError.message);
+    if (signOutError) {
+      setError(signOutError.message);
+      return;
+    }
+    queryClient.clear();
   };
 
   if (checkingSession) {
@@ -92,10 +106,12 @@ export default function AdminPage() {
     }
 
     return (
-      <AdminApp
-        userEmail={session.user.email ?? "Authenticated admin"}
-        onSignOut={() => void handleSignOut()}
-      />
+      <QueryClientProvider client={queryClient}>
+        <AdminApp
+          userEmail={session.user.email ?? "Authenticated admin"}
+          onSignOut={() => void handleSignOut()}
+        />
+      </QueryClientProvider>
     );
   }
 

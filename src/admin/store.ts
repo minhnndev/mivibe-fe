@@ -211,7 +211,8 @@ export async function getCategories(): Promise<Category[]> {
       .from("categories")
       .select("*")
       .order("sort_order");
-    if (!error && data) return data as Category[];
+    if (error) throw new Error(`Categories fetch failed: ${error.message}`);
+    return (data ?? []) as Category[];
   }
   return loadLocal("categories", SEED_CATEGORIES);
 }
@@ -250,22 +251,24 @@ export async function saveCategory(
             sort_order,
           },
         ];
-  saveLocal("categories", updated);
-
   if (isConfigured) {
     const payload =
       existing >= 0 ? updated[existing]! : updated[updated.length - 1]!;
     const { error } = await supabase.from("categories").upsert(payload);
-    if (error) console.warn("Supabase sync failed:", error);
+    if (error) throw new Error(`Category save failed: ${error.message}`);
   }
+  saveLocal("categories", updated);
   return updated;
 }
 
 export async function deleteCategory(id: string): Promise<Category[]> {
   const categories = await getCategories();
   const updated = categories.filter((c) => c.id !== id);
+  if (isConfigured) {
+    const { error } = await supabase.from("categories").delete().eq("id", id);
+    if (error) throw new Error(`Category delete failed: ${error.message}`);
+  }
   saveLocal("categories", updated);
-  if (isConfigured) await supabase.from("categories").delete().eq("id", id);
   return updated;
 }
 
@@ -277,7 +280,8 @@ export async function getLuts(): Promise<Lut[]> {
       .select("*, categories(*)")
       .eq("is_active", true)
       .order("sort_order");
-    if (!error && data) return data as Lut[];
+    if (error) throw new Error(`LUT fetch failed: ${error.message}`);
+    return (data ?? []) as Lut[];
   }
   return loadLocal("luts", SEED_LUTS);
 }
@@ -312,8 +316,6 @@ export async function saveLut(lut: LutInput): Promise<Lut[]> {
     existing >= 0
       ? luts.map((l) => (l.id === lut.id ? { ...l, ...item } : l))
       : [...luts, item];
-  saveLocal("luts", updated);
-
   if (isConfigured) {
     const payload = {
       name: item.name,
@@ -330,16 +332,20 @@ export async function saveLut(lut: LutInput): Promise<Lut[]> {
       existing >= 0
         ? await supabase.from("luts").update(payload).eq("id", item.id)
         : await supabase.from("luts").insert({ id: item.id, ...payload });
-    if (error) console.warn("Supabase sync failed:", error);
+    if (error) throw new Error(`LUT save failed: ${error.message}`);
   }
+  saveLocal("luts", updated);
   return updated;
 }
 
 export async function deleteLut(id: string): Promise<Lut[]> {
   const luts = await getLuts();
   const updated = luts.filter((l) => l.id !== id);
+  if (isConfigured) {
+    const { error } = await supabase.from("luts").delete().eq("id", id);
+    if (error) throw new Error(`LUT delete failed: ${error.message}`);
+  }
   saveLocal("luts", updated);
-  if (isConfigured) await supabase.from("luts").delete().eq("id", id);
   return updated;
 }
 
@@ -364,7 +370,9 @@ export async function getRemoteConfig(): Promise<RemoteConfig> {
       return remoteConfig;
     }
 
-    if (error) console.warn("Remote config Supabase fetch failed:", error);
+    if (error) {
+      throw new Error(`Remote config fetch failed: ${error.message}`);
+    }
   }
 
   return normalizeRemoteConfig(localConfig);

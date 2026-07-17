@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { ReactNode } from "react";
 import {
@@ -13,18 +13,7 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  getLuts,
-  getCategories,
-  saveLut,
-  deleteLut,
-  saveCategory,
-  deleteCategory,
-  generateManifest,
-  getRemoteConfig,
-  resetRemoteConfigFromLuts,
-  saveRemoteConfig,
-} from "./store";
+import { generateManifest } from "./store";
 import LutPreviewCard from "./components/LutPreviewCard";
 import LutEditModal from "./components/LutEditModal";
 import CategoryManager from "./components/CategoryManager";
@@ -35,10 +24,20 @@ import PreviewImageSelector from "./components/PreviewImageSelector";
 import RemoteConfigManager from "./components/RemoteConfigManager";
 import { API_ENDPOINTS, DEFAULT_IMAGES } from "./constants";
 import { isConfigured } from "./supabase";
+import {
+  useAdminCategoriesQuery,
+  useAdminLutsQuery,
+  useAdminRemoteConfigQuery,
+  useDeleteCategoryMutation,
+  useDeleteLutMutation,
+  usePublishRemoteConfigMutation,
+  useRegroupRemoteConfigMutation,
+  useSaveCategoryMutation,
+  useSaveLutMutation,
+} from "./queries";
 import type {
   ActiveTab,
   AdminTheme,
-  Category,
   CategoryInput,
   FilterStatus,
   Lut,
@@ -60,9 +59,20 @@ type AdminAppProps = {
 };
 
 export default function AdminApp({ userEmail, onSignOut }: AdminAppProps) {
-  const [luts, setLuts] = useState<Lut[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const lutsQuery = useAdminLutsQuery();
+  const categoriesQuery = useAdminCategoriesQuery();
+  const remoteConfigQuery = useAdminRemoteConfigQuery();
+  const saveLutMutation = useSaveLutMutation();
+  const deleteLutMutation = useDeleteLutMutation();
+  const saveCategoryMutation = useSaveCategoryMutation();
+  const deleteCategoryMutation = useDeleteCategoryMutation();
+  const publishRemoteConfigMutation = usePublishRemoteConfigMutation();
+  const regroupRemoteConfigMutation = useRegroupRemoteConfigMutation();
+  const luts = lutsQuery.data ?? [];
+  const categories = categoriesQuery.data ?? [];
+  const remoteConfig = remoteConfigQuery.data ?? null;
+  const loading = lutsQuery.isLoading || categoriesQuery.isLoading;
+  const dataError = lutsQuery.error ?? categoriesQuery.error;
   const [view, setView] = useState<ViewMode>("grid");
   const [activeTab, setActiveTab] = useState<ActiveTab>("luts");
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -73,7 +83,6 @@ export default function AdminApp({ userEmail, onSignOut }: AdminAppProps) {
   const [previewImage, setPreviewImage] = useState(DEFAULT_IMAGES[0]!.url);
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [manifest, setManifest] = useState<Manifest | null>(null);
-  const [remoteConfig, setRemoteConfig] = useState<RemoteConfig | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
   const [theme, setTheme] = useState<AdminTheme>("light");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -83,23 +92,6 @@ export default function AdminApp({ userEmail, onSignOut }: AdminAppProps) {
     window.setTimeout(() => setToast(null), 3000);
   };
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    const [l, c, r] = await Promise.all([
-      getLuts(),
-      getCategories(),
-      getRemoteConfig(),
-    ]);
-    setLuts(l);
-    setCategories(c);
-    setRemoteConfig(r);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
-
   const filteredLuts = filterLuts(luts, {
     categoryId: filterCategory,
     status: filterStatus,
@@ -107,34 +99,46 @@ export default function AdminApp({ userEmail, onSignOut }: AdminAppProps) {
   });
 
   const handleSaveLut = async (lut: LutInput) => {
-    setLuts((items) =>
-      items.map((item) => (item.id === lut.id ? { ...item, ...lut } : item)),
-    );
-    const updated = await saveLut(lut);
-    setLuts(updated);
-    setEditModal(null);
-    showToast(lut.id ? "LUT updated" : "LUT created");
+    try {
+      const updated = await saveLutMutation.mutateAsync(lut);
+      if (selectedLut?.id === lut.id) {
+        setSelectedLut(updated.find((item) => item.id === lut.id) ?? null);
+      }
+      setEditModal(null);
+      showToast(lut.id ? "LUT updated" : "LUT created");
+    } catch (error) {
+      showToast(messageFromError(error), "error");
+    }
   };
 
   const handleDeleteLut = async (id: string) => {
     if (!confirm("Delete this LUT?")) return;
-    const updated = await deleteLut(id);
-    setLuts(updated);
-    if (selectedLut?.id === id) setSelectedLut(null);
-    showToast("LUT deleted", "error");
+    try {
+      await deleteLutMutation.mutateAsync(id);
+      if (selectedLut?.id === id) setSelectedLut(null);
+      showToast("LUT deleted");
+    } catch (error) {
+      showToast(messageFromError(error), "error");
+    }
   };
 
   const handleSaveCategory = async (cat: CategoryInput) => {
-    const updated = await saveCategory(cat);
-    setCategories(updated);
-    showToast("Category saved");
+    try {
+      await saveCategoryMutation.mutateAsync(cat);
+      showToast("Category saved");
+    } catch (error) {
+      showToast(messageFromError(error), "error");
+    }
   };
 
   const handleDeleteCategory = async (id: string) => {
     if (!confirm("Delete this category?")) return;
-    const updated = await deleteCategory(id);
-    setCategories(updated);
-    showToast("Category deleted", "error");
+    try {
+      await deleteCategoryMutation.mutateAsync(id);
+      showToast("Category deleted");
+    } catch (error) {
+      showToast(messageFromError(error), "error");
+    }
   };
 
   const handleExportManifest = async () => {
@@ -146,8 +150,7 @@ export default function AdminApp({ userEmail, onSignOut }: AdminAppProps) {
 
   const handleSaveRemoteConfig = async (config: RemoteConfig) => {
     try {
-      const updated = await saveRemoteConfig(config);
-      setRemoteConfig(updated);
+      await publishRemoteConfigMutation.mutateAsync(config);
       showToast("Remote config published");
     } catch (error) {
       showToast(messageFromError(error), "error");
@@ -165,8 +168,7 @@ export default function AdminApp({ userEmail, onSignOut }: AdminAppProps) {
   const handleResetRemoteConfig = async () => {
     if (!confirm("Regenerate remote config from current LUTs? Existing package edits will be replaced.")) return;
     try {
-      const updated = await resetRemoteConfigFromLuts();
-      setRemoteConfig(updated);
+      await regroupRemoteConfigMutation.mutateAsync();
       showToast("Remote config regrouped and published");
     } catch (error) {
       showToast(messageFromError(error), "error");
@@ -253,6 +255,19 @@ export default function AdminApp({ userEmail, onSignOut }: AdminAppProps) {
                     }`}
                   >
                     Loading...
+                  </div>
+                ) : dataError ? (
+                  <div className="flex h-64 flex-col items-center justify-center gap-3 text-center">
+                    <p className="max-w-md text-sm text-red-500">{messageFromError(dataError)}</p>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        void lutsQuery.refetch();
+                        void categoriesQuery.refetch();
+                      }}
+                    >
+                      Retry
+                    </Button>
                   </div>
                 ) : filteredLuts.length === 0 ? (
                   <div
@@ -555,9 +570,20 @@ export default function AdminApp({ userEmail, onSignOut }: AdminAppProps) {
 
         {/* ── Remote Config ───────────────────────────────────── */}
         {activeTab === "remote-config" && (
-          loading || !remoteConfig ? (
+          remoteConfigQuery.isLoading ? (
             <div className={isLight ? "flex h-screen items-center justify-center bg-neutral-100 text-neutral-400" : "flex h-screen items-center justify-center bg-[#0a0a0a] text-white/30"}>
               Loading remote config...
+            </div>
+          ) : remoteConfigQuery.error || !remoteConfig ? (
+            <div className={isLight ? "flex h-screen flex-col items-center justify-center gap-3 bg-neutral-100 text-neutral-700" : "flex h-screen flex-col items-center justify-center gap-3 bg-[#0a0a0a] text-white/70"}>
+              <p className="max-w-lg text-center text-sm text-red-500">
+                {remoteConfigQuery.error
+                  ? messageFromError(remoteConfigQuery.error)
+                  : "Remote config is unavailable"}
+              </p>
+              <Button variant="outline" onClick={() => void remoteConfigQuery.refetch()}>
+                Retry
+              </Button>
             </div>
           ) : (
             <RemoteConfigManager
