@@ -22,7 +22,9 @@ function isCinematicLut(lut: Lut, cinematicCategoryId?: string) {
     .join(" ")
     .toLowerCase();
 
-  return lut.category_id === cinematicCategoryId || fields.includes("cinematic");
+  return (
+    lut.category_id === cinematicCategoryId || fields.includes("cinematic")
+  );
 }
 
 export default function Landing() {
@@ -134,6 +136,12 @@ export default function Landing() {
             <Button
               aria-label="Download on the App Store"
               className="h-[3.5rem] w-[12.25rem] rounded-[0.72rem] border border-white/18 bg-black p-0 shadow-[0_18px_60px_rgba(0,0,0,0.28)] transition hover:scale-[1.02] hover:bg-black"
+              onClick={() => {
+                window.open(
+                  "https://apps.apple.com/app",
+                  "_blank",
+                );
+              }}
             >
               <span
                 className="block h-full w-full rounded-[0.72rem]"
@@ -146,6 +154,12 @@ export default function Landing() {
             <Button
               aria-label="Get it on Google Play"
               className="h-[3.5rem] w-[12.25rem] rounded-[0.72rem] border border-white/18 bg-black p-0 shadow-[0_18px_60px_rgba(0,0,0,0.28)] transition hover:scale-[1.02] hover:bg-black"
+              onClick={() => {
+                window.open(
+                  "https://play.google.com/store/apps/details?id=com.mivibe.app",
+                  "_blank",
+                );
+              }}
             >
               <span
                 className="block h-full w-full rounded-[0.72rem]"
