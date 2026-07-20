@@ -177,6 +177,9 @@ export function createRemoteConfigFromLuts(
   resolveDownloadUrl: (storageKey: string) => string = () => "",
 ): RemoteConfig {
   const grouped = new Map<string, RemoteLut[]>();
+  const freeLutIds = new Set(
+    luts.filter((lut) => lut.is_free === true).map((lut) => lut.id),
+  );
 
   for (const lut of luts) {
     const categoryId = inferCategoryId(lut, categories);
@@ -238,6 +241,7 @@ export function createRemoteConfigFromLuts(
         styleTag: category.name.toLowerCase(),
         order: index + 1,
         isActive: true,
+        free: updatedChunk.every((lut) => freeLutIds.has(lut.id)),
         lutIds: updatedChunk.map((lut) => lut.id),
         version: "1.0.0",
         sizeBytes: null,
@@ -260,6 +264,7 @@ export function normalizeRemoteConfig(config: RemoteConfig): RemoteConfig {
   const packageIds = new Set(config.packages.map((item) => item.id));
   const normalizedPackages = config.packages.map((pkg) => ({
     ...pkg,
+    free: pkg.free ?? false,
     lutIds: pkg.lutIds.filter((id) => config.luts.some((lut) => lut.id === id)),
     version: pkg.version ?? "1.0.0",
     sizeBytes: pkg.sizeBytes ?? null,
@@ -313,6 +318,7 @@ export function validateRemoteConfig(config: RemoteConfig) {
   for (const pkg of config.packages) {
     if (!pkg.name.trim()) errors.push("Package name is required");
     if (!Number.isFinite(pkg.order)) errors.push(`${pkg.name} order must be a number`);
+    if (typeof pkg.free !== "boolean") errors.push(`${pkg.name} free must be a boolean`);
     if (pkg.coverImage && !isValidUrl(pkg.coverImage)) {
       errors.push(`${pkg.name} cover image must be a valid URL`);
     }

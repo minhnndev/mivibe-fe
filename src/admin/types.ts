@@ -80,6 +80,7 @@ export type LutPackage = {
   styleTag: string;
   order: number;
   isActive: boolean;
+  free: boolean;
   lutIds: string[];
   version?: string;
   sizeBytes?: number | null;

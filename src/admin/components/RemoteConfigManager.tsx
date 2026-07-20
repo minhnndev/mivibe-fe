@@ -282,6 +282,7 @@ export default function RemoteConfigManager({
           styleTag: "",
           order: current.packages.length + 1,
           isActive: true,
+          free: false,
           lutIds: [],
         },
       ],
@@ -531,7 +532,7 @@ export default function RemoteConfigManager({
                 <ListRow key={pkg.id} isLight={isLight} onClick={() => setSelection({ type: "package", id: pkg.id })}>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{pkg.name}</div>
-                    <div className={isLight ? "text-xs text-neutral-500" : "text-xs text-white/40"}>{pkg.lutIds.length} LUTs · {pkg.isActive ? "Active" : "Inactive"}</div>
+                    <div className={isLight ? "text-xs text-neutral-500" : "text-xs text-white/40"}>{pkg.lutIds.length} LUTs · {pkg.isActive ? "Active" : "Inactive"} · {pkg.free ? "Free" : "Paid"}</div>
                   </div>
                   <Badge className={badgeClassName}>{pkg.styleTag || "style"}</Badge>
                 </ListRow>
@@ -596,7 +597,10 @@ export default function RemoteConfigManager({
                   {draft.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                 </select>
               </Field>
-              <label className="flex items-end gap-2 pb-2 text-sm"><Switch checked={selectedPackage.isActive} onCheckedChange={(checked) => setPackage(selectedPackage.id, { isActive: checked })} /> Active</label>
+              <div className="flex items-end gap-4 pb-2">
+                <label className="flex items-center gap-2 text-sm"><Switch checked={selectedPackage.isActive} onCheckedChange={(checked) => setPackage(selectedPackage.id, { isActive: checked })} /> Active</label>
+                <label className="flex items-center gap-2 text-sm"><Switch checked={selectedPackage.free} onCheckedChange={(checked) => setPackage(selectedPackage.id, { free: checked })} /> Free</label>
+              </div>
             </div>
             <Section title={`Included LUTs (${selectedPackage.lutIds.length})`} isLight={isLight}>
               <div className="grid grid-cols-2 gap-2">
