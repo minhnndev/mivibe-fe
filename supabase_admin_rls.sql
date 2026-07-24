@@ -4,6 +4,7 @@
 alter table public.categories enable row level security;
 alter table public.luts enable row level security;
 alter table public.remote_configs enable row level security;
+alter table public.lut_package_download_stats enable row level security;
 
 drop policy if exists "admin_all_categories" on public.categories;
 create policy "admin_all_categories"
@@ -31,3 +32,10 @@ for all
 to authenticated
 using (((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin')
 with check (((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin');
+
+drop policy if exists "lut_package_download_stats_read" on public.lut_package_download_stats;
+create policy "lut_package_download_stats_read"
+on public.lut_package_download_stats
+for select
+to anon, authenticated
+using (true);

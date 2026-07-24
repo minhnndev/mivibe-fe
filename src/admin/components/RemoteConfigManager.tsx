@@ -284,6 +284,7 @@ export default function RemoteConfigManager({
           isActive: true,
           free: false,
           lutIds: [],
+          downloadCount: Math.floor(50 + Math.random() * 101),
         },
       ],
       categories: current.categories.map((category) =>
@@ -506,7 +507,7 @@ export default function RemoteConfigManager({
       >
         {selection.type === "root" && (
           <div className="space-y-5">
-            <PanelHeader title="Remote Config" subtitle={`${draft.categories.length} categories · ${draft.packages.length} packages · ${draft.luts.length} LUTs`} />
+            <PanelHeader title="Remote Config" subtitle={`${draft.categories.length} categories · ${draft.packages.length} packages · ${draft.luts.length} LUTs · ${formatDownloadCount(getTotalDownloadCount(draft.packages))} downloads`} />
             <div className="flex flex-wrap gap-2">
               <Button onClick={addCategory} size="sm"><Plus size={14} /> Add category</Button>
               <Button onClick={() => addPackage()} size="sm" variant="outline"><Plus size={14} /> Add package</Button>
@@ -532,7 +533,7 @@ export default function RemoteConfigManager({
                 <ListRow key={pkg.id} isLight={isLight} onClick={() => setSelection({ type: "package", id: pkg.id })}>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{pkg.name}</div>
-                    <div className={isLight ? "text-xs text-neutral-500" : "text-xs text-white/40"}>{pkg.lutIds.length} LUTs · {pkg.isActive ? "Active" : "Inactive"} · {pkg.free ? "Free" : "Paid"}</div>
+                    <div className={isLight ? "text-xs text-neutral-500" : "text-xs text-white/40"}>{pkg.lutIds.length} LUTs · {formatDownloadCount(pkg.downloadCount)} downloads · {pkg.isActive ? "Active" : "Inactive"} · {pkg.free ? "Free" : "Paid"}</div>
                   </div>
                   <Badge className={badgeClassName}>{pkg.styleTag || "style"}</Badge>
                 </ListRow>
@@ -591,6 +592,7 @@ export default function RemoteConfigManager({
               <Field label="Style tag" labelClassName={labelClassName}><Input value={selectedPackage.styleTag} onChange={(event) => setPackage(selectedPackage.id, { styleTag: event.target.value })} className={inputClassName} /></Field>
               <Field label="Order" labelClassName={labelClassName}><Input type="number" value={selectedPackage.order} onChange={(event) => setPackage(selectedPackage.id, { order: Number(event.target.value) })} className={inputClassName} /></Field>
             </div>
+            <Field label="Download count" labelClassName={labelClassName}><Input type="number" min={0} value={selectedPackage.downloadCount ?? 0} onChange={(event) => setPackage(selectedPackage.id, { downloadCount: Math.max(0, Math.floor(Number(event.target.value) || 0)) })} className={inputClassName} /></Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Parent category" labelClassName={labelClassName}>
                 <select value={packageCategoryId} onChange={(event) => movePackageToCategory(selectedPackage.id, event.target.value)} className={`${selectClassName} w-full`}>
@@ -739,7 +741,7 @@ function buildFlow(
         position: withCustomPosition(packageNodeId, { x: packageX, y: packageY }),
         data: {
           title: pkg.name,
-          subtitle: `${pkg.lutIds.length} LUTs`,
+          subtitle: `${pkg.lutIds.length} LUTs · ${formatDownloadCount(pkg.downloadCount)} downloads`,
           status: pkg.isActive ? "Active" : "Inactive",
           selected: selection.type === "package" && selection.id === pkg.id,
           tone: "package",
@@ -766,7 +768,7 @@ function buildFlow(
     position: withCustomPosition("root", { x: 0, y: Math.max(0, (Math.max(...columnHeights) - 430) / 2) }),
     data: {
       title: "Remote Config",
-      subtitle: `${config.categories.length} categories · ${config.packages.length} packages`,
+      subtitle: `${config.categories.length} categories · ${config.packages.length} packages · ${formatDownloadCount(getTotalDownloadCount(config.packages))} downloads`,
       selected: selection.type === "root",
       tone: "root",
       isLight,
@@ -796,6 +798,17 @@ function Section({ title, isLight, children }: { title: string; isLight: boolean
       {children}
     </Card>
   );
+}
+
+function getTotalDownloadCount(packages: LutPackage[]) {
+  return packages.reduce((total, pkg) => total + (pkg.downloadCount ?? 0), 0);
+}
+
+function formatDownloadCount(value?: number) {
+  const count = Math.max(0, Math.floor(value ?? 0));
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(count >= 10_000_000 ? 0 : 1)}M`;
+  if (count >= 1_000) return `${(count / 1_000).toFixed(count >= 10_000 ? 0 : 1)}K`;
+  return `${count}`;
 }
 
 function ListRow({ isLight, onClick, children }: { isLight: boolean; onClick: () => void; children: React.ReactNode }) {

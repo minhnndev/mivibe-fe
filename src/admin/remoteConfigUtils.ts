@@ -171,6 +171,16 @@ function chunkLuts(luts: RemoteLut[]) {
   return chunks;
 }
 
+function randomInitialDownloadCount() {
+  return Math.floor(50 + Math.random() * 101);
+}
+
+function normalizeDownloadCount(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, Math.floor(value))
+    : 0;
+}
+
 export function createRemoteConfigFromLuts(
   luts: Lut[],
   categories: Category[],
@@ -245,6 +255,7 @@ export function createRemoteConfigFromLuts(
         lutIds: updatedChunk.map((lut) => lut.id),
         version: "1.0.0",
         sizeBytes: null,
+        downloadCount: randomInitialDownloadCount(),
       });
       category.packageIds.push(packageId);
       remoteLuts.push(...updatedChunk);
@@ -268,6 +279,7 @@ export function normalizeRemoteConfig(config: RemoteConfig): RemoteConfig {
     lutIds: pkg.lutIds.filter((id) => config.luts.some((lut) => lut.id === id)),
     version: pkg.version ?? "1.0.0",
     sizeBytes: pkg.sizeBytes ?? null,
+    downloadCount: normalizeDownloadCount(pkg.downloadCount),
   }));
 
   return {

@@ -27,12 +27,61 @@ type RemoteConfigRow = {
   updated_at?: string;
 };
 
+type LutPackageDownloadStatsRow = {
+  package_id: string;
+  download_count: number;
+};
+
 function slugify(value: string): string {
   return value
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+function mergePackageDownloadStats(
+  config: RemoteConfig,
+  stats: LutPackageDownloadStatsRow[],
+): RemoteConfig {
+  const statsByPackageId = new Map(
+    stats.map((row) => [row.package_id, row.download_count]),
+  );
+
+  return {
+    ...config,
+    packages: config.packages.map((pkg) => ({
+      ...pkg,
+      downloadCount: statsByPackageId.get(pkg.id) ?? pkg.downloadCount ?? 0,
+    })),
+  };
+}
+
+async function fetchPackageDownloadStats() {
+  const { data, error } = await supabase
+    .from("lut_package_download_stats")
+    .select("package_id, download_count");
+
+  if (error) {
+    console.warn(`Package download stats fetch failed: ${error.message}`);
+    return [];
+  }
+
+  return (data ?? []) as LutPackageDownloadStatsRow[];
+}
+
+async function syncPackageDownloadStats() {
+  const { error } = await supabase.rpc("sync_lut_package_download_stats");
+  if (error) {
+    console.warn(`Package download stats sync failed: ${error.message}`);
+  }
+}
+
+async function withPackageDownloadStats(config: RemoteConfig) {
+  if (!isConfigured) return config;
+
+  await syncPackageDownloadStats();
+  return mergePackageDownloadStats(config, await fetchPackageDownloadStats());
 }
 
 export function getLutUrl(storageKey: string): string {
@@ -365,7 +414,9 @@ export async function getRemoteConfig(): Promise<RemoteConfig> {
 
     if (!error && data) {
       const row = data as RemoteConfigRow;
-      const remoteConfig = normalizeRemoteConfig(row.config);
+      const remoteConfig = await withPackageDownloadStats(
+        normalizeRemoteConfig(row.config),
+      );
       saveLocal("remote_config", remoteConfig);
       return remoteConfig;
     }
@@ -401,10 +452,13 @@ export async function saveRemoteConfig(config: RemoteConfig): Promise<RemoteConf
     if (!data) {
       throw new Error("Remote config publish failed: no row returned");
     }
+
+    await syncPackageDownloadStats();
   }
 
-  saveLocal("remote_config", updated);
-  return updated;
+  const merged = await withPackageDownloadStats(updated);
+  saveLocal("remote_config", merged);
+  return merged;
 }
 
 export async function resetRemoteConfigFromLuts(): Promise<RemoteConfig> {

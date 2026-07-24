@@ -84,6 +84,7 @@ export type LutPackage = {
   lutIds: string[];
   version?: string;
   sizeBytes?: number | null;
+  downloadCount?: number;
 };
 
 export type RemoteLut = {
